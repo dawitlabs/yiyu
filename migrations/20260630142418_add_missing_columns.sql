@@ -1,0 +1,9 @@
+-- +goose Up
+ALTER TABLE videos 
+ADD COLUMN IF NOT EXISTS duration INTEGER,
+ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ;
+
+-- +goose Down
+ALTER TABLE videos 
+DROP COLUMN IF EXISTS duration,
+DROP COLUMN IF EXISTS published_at;

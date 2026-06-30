@@ -17,6 +17,7 @@ CREATE TABLE users (
     avatar_url TEXT,
     role user_role NOT NULL DEFAULT 'user',
     is_active BOOLEAN DEFAULT TRUE,
+	password_hash TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );

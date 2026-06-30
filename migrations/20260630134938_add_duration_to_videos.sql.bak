@@ -1,0 +1,4 @@
+-- +goose Up
+ALTER TABLE videos ADD COLUMN duration INTEGER;
+-- +goose Down
+ALTER TABLE videos DROP COLUMN IF EXISTS duration;

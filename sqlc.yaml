@@ -1,13 +1,13 @@
 version: "2"
 
 sql:
-  - engine: postgres
-    queries: "internal/adapter/repository/queries"
+  - engine: "postgresql"
+    queries: "internal/adapters/repository/queries"
     schema: "migrations"
     gen:
       go:
         package: "repository"
-        out: "internal/adapter/repository"
+        out: "internal/adapters/repository"
         emit_json_tags: true
         emit_db_tags: true
         emit_interface: true
