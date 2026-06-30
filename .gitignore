@@ -63,3 +63,7 @@ build/
 
 # MinIO data (if using local)
 minio-data/
+
+.env
+docker-compose.override.yml
+docker-compose.local.yml
