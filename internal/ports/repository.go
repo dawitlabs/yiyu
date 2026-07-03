@@ -13,7 +13,7 @@ type Repository interface {
 	SessionRepository
 	VideoRepository
 	ChannelRepository
-	// CommentRepository
+	CommentRepository
 	// ShareRepository
 	// FavouriteRepository
 	// WatchlistRepository
@@ -63,6 +63,13 @@ type ChannelRepository interface {
 	GetChannelByHandle(ctx context.Context, handle string) (repository.Channel, error)
 	GetChannelByUserID(ctx context.Context, userID pgtype.UUID) (repository.Channel, error)
 	UpdateChannel(ctx context.Context, arg repository.UpdateChannelParams) (repository.Channel, error)
+}
+
+type CommentRepository interface {
+	CreateComment(ctx context.Context, arg repository.CreateCommentParams) (repository.Comment, error)
+	GetCommentByID(ctx context.Context, id uuid.UUID) (repository.Comment, error)
+	ListCommentsByVideo(ctx context.Context, arg repository.ListCommentsByVideoParams) ([]repository.ListCommentsByVideoRow, error)
+	DeleteComment(ctx context.Context, id uuid.UUID) error
 }
 
 // Compile-time guard: PostgresRepository must satisfy Repository in full.

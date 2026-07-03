@@ -20,10 +20,12 @@ type Querier interface {
 	// Optional useful admin queries:
 	AdminUpdateUserRole(ctx context.Context, arg AdminUpdateUserRoleParams) (User, error)
 	CreateChannel(ctx context.Context, arg CreateChannelParams) (Channel, error)
+	CreateComment(ctx context.Context, arg CreateCommentParams) (Comment, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	CreateVideo(ctx context.Context, arg CreateVideoParams) (Video, error)
 	CreateVideoInteraction(ctx context.Context, arg CreateVideoInteractionParams) (VideoInteraction, error)
+	DeleteComment(ctx context.Context, id uuid.UUID) error
 	DeleteSession(ctx context.Context, tokenHash string) error
 	DeleteUser(ctx context.Context, arg DeleteUserParams) (User, error)
 	DeleteUserSessions(ctx context.Context, userID uuid.UUID) error
@@ -31,6 +33,7 @@ type Querier interface {
 	GetChannelByHandle(ctx context.Context, handle string) (Channel, error)
 	GetChannelByID(ctx context.Context, id uuid.UUID) (Channel, error)
 	GetChannelByUserID(ctx context.Context, userID pgtype.UUID) (Channel, error)
+	GetCommentByID(ctx context.Context, id uuid.UUID) (Comment, error)
 	GetSessionWithUser(ctx context.Context, tokenHash string) (GetSessionWithUserRow, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (User, error)
@@ -41,6 +44,7 @@ type Querier interface {
 	IncrementVideoDislikes(ctx context.Context, id uuid.UUID) (Video, error)
 	IncrementVideoLikes(ctx context.Context, id uuid.UUID) (Video, error)
 	IncrementVideoViews(ctx context.Context, id uuid.UUID) (Video, error)
+	ListCommentsByVideo(ctx context.Context, arg ListCommentsByVideoParams) ([]ListCommentsByVideoRow, error)
 	ListPublicVideos(ctx context.Context, arg ListPublicVideosParams) ([]Video, error)
 	ListVideosByChannel(ctx context.Context, arg ListVideosByChannelParams) ([]Video, error)
 	UpdateChannel(ctx context.Context, arg UpdateChannelParams) (Channel, error)

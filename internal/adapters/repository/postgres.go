@@ -143,3 +143,19 @@ func (r *PostgresRepository) GetChannelByUserID(ctx context.Context, userID pgty
 func (r *PostgresRepository) UpdateChannel(ctx context.Context, arg UpdateChannelParams) (Channel, error) {
 	return r.queries.UpdateChannel(ctx, arg)
 }
+
+func (r *PostgresRepository) CreateComment(ctx context.Context, arg CreateCommentParams) (Comment, error) {
+	return r.queries.CreateComment(ctx, arg)
+}
+
+func (r *PostgresRepository) GetCommentByID(ctx context.Context, id uuid.UUID) (Comment, error) {
+	return r.queries.GetCommentByID(ctx, id)
+}
+
+func (r *PostgresRepository) ListCommentsByVideo(ctx context.Context, arg ListCommentsByVideoParams) ([]ListCommentsByVideoRow, error) {
+	return r.queries.ListCommentsByVideo(ctx, arg)
+}
+
+func (r *PostgresRepository) DeleteComment(ctx context.Context, id uuid.UUID) error {
+	return r.queries.DeleteComment(ctx, id)
+}

@@ -40,6 +40,7 @@ func main() {
 	admin := httpapi.NewAdminHandler(repo)
 	channel := httpapi.NewChannelHandler(repo)
 	video := httpapi.NewVideoHandler(repo)
+	comment := httpapi.NewCommentHandler(repo)
 
 	requireAuth := httpapi.RequireAuth(repo)
 	requireAdmin := func(h http.Handler) http.Handler {
@@ -69,6 +70,10 @@ func main() {
 	mux.Handle("POST /videos/{id}/dislike", requireAuth(http.HandlerFunc(video.DislikeVideo)))
 	mux.Handle("GET /videos/{id}/reaction", requireAuth(http.HandlerFunc(video.GetMyReaction)))
 	mux.HandleFunc("GET /channels/{handle}/videos", video.ListVideosByChannel)
+
+	mux.Handle("POST /videos/{id}/comments", requireAuth(http.HandlerFunc(comment.CreateComment)))
+	mux.HandleFunc("GET /videos/{id}/comments", comment.ListCommentsByVideo)
+	mux.Handle("DELETE /comments/{id}", requireAuth(http.HandlerFunc(comment.DeleteComment)))
 
 	log.Println("listening on :8082")
 	log.Fatal(http.ListenAndServe(":8082", mux))
