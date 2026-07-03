@@ -38,6 +38,7 @@ func main() {
 	repo := repository.NewPostgresRepository(pool)
 	auth := httpapi.NewAuthHandler(repo)
 	admin := httpapi.NewAdminHandler(repo)
+	channel := httpapi.NewChannelHandler(repo)
 
 	requireAuth := httpapi.RequireAuth(repo)
 	requireAdmin := func(h http.Handler) http.Handler {
@@ -53,6 +54,10 @@ func main() {
 	mux.Handle("GET /admin/users", requireAdmin(http.HandlerFunc(admin.ListUsers)))
 	mux.Handle("DELETE /admin/users/{id}", requireAdmin(http.HandlerFunc(admin.DeleteUser)))
 	mux.Handle("PATCH /admin/users/{id}/role", requireAdmin(http.HandlerFunc(admin.UpdateUserRole)))
+
+	mux.Handle("POST /channels", requireAuth(http.HandlerFunc(channel.CreateChannel)))
+	mux.HandleFunc("GET /channels/{handle}", channel.GetChannelByHandle)
+	mux.Handle("PATCH /channels/{id}", requireAuth(http.HandlerFunc(channel.UpdateChannel)))
 
 	log.Println("listening on :8082")
 	log.Fatal(http.ListenAndServe(":8082", mux))

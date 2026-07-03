@@ -8,6 +8,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Querier interface {
@@ -17,12 +18,16 @@ type Querier interface {
 	AdminGetUserWithDeleted(ctx context.Context, id uuid.UUID) (User, error)
 	// Optional useful admin queries:
 	AdminUpdateUserRole(ctx context.Context, arg AdminUpdateUserRoleParams) (User, error)
+	CreateChannel(ctx context.Context, arg CreateChannelParams) (Channel, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	CreateVideo(ctx context.Context, arg CreateVideoParams) (Video, error)
 	DeleteSession(ctx context.Context, tokenHash string) error
 	DeleteUser(ctx context.Context, arg DeleteUserParams) (User, error)
 	DeleteUserSessions(ctx context.Context, userID uuid.UUID) error
+	GetChannelByHandle(ctx context.Context, handle string) (Channel, error)
+	GetChannelByID(ctx context.Context, id uuid.UUID) (Channel, error)
+	GetChannelByUserID(ctx context.Context, userID pgtype.UUID) (Channel, error)
 	GetSessionWithUser(ctx context.Context, tokenHash string) (GetSessionWithUserRow, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (User, error)
@@ -33,6 +38,7 @@ type Querier interface {
 	IncrementVideoLikes(ctx context.Context, id uuid.UUID) (Video, error)
 	IncrementVideoViews(ctx context.Context, id uuid.UUID) (Video, error)
 	ListVideosByChannel(ctx context.Context, arg ListVideosByChannelParams) ([]Video, error)
+	UpdateChannel(ctx context.Context, arg UpdateChannelParams) (Channel, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 	UpdateVideoStatus(ctx context.Context, arg UpdateVideoStatusParams) (Video, error)
 }

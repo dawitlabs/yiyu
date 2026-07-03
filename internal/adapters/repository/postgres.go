@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -97,4 +98,24 @@ func (r *PostgresRepository) IncrementVideoLikes(ctx context.Context, id uuid.UU
 
 func (r *PostgresRepository) IncrementVideoDislikes(ctx context.Context, id uuid.UUID) (Video, error) {
 	return r.queries.IncrementVideoDislikes(ctx, id)
+}
+
+func (r *PostgresRepository) CreateChannel(ctx context.Context, arg CreateChannelParams) (Channel, error) {
+	return r.queries.CreateChannel(ctx, arg)
+}
+
+func (r *PostgresRepository) GetChannelByID(ctx context.Context, id uuid.UUID) (Channel, error) {
+	return r.queries.GetChannelByID(ctx, id)
+}
+
+func (r *PostgresRepository) GetChannelByHandle(ctx context.Context, handle string) (Channel, error) {
+	return r.queries.GetChannelByHandle(ctx, handle)
+}
+
+func (r *PostgresRepository) GetChannelByUserID(ctx context.Context, userID pgtype.UUID) (Channel, error) {
+	return r.queries.GetChannelByUserID(ctx, userID)
+}
+
+func (r *PostgresRepository) UpdateChannel(ctx context.Context, arg UpdateChannelParams) (Channel, error) {
+	return r.queries.UpdateChannel(ctx, arg)
 }

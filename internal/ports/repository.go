@@ -5,13 +5,14 @@ import (
 
 	"github.com/dawitlabs/yiyu/internal/adapters/repository"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Repository interface {
 	UserRepository
 	SessionRepository
 	VideoRepository
-	// ChannelRepository
+	ChannelRepository
 	// CommentRepository
 	// ShareRepository
 	// FavouriteRepository
@@ -47,6 +48,14 @@ type VideoRepository interface {
 	IncrementVideoViews(ctx context.Context, id uuid.UUID) (repository.Video, error)
 	IncrementVideoLikes(ctx context.Context, id uuid.UUID) (repository.Video, error)
 	IncrementVideoDislikes(ctx context.Context, id uuid.UUID) (repository.Video, error)
+}
+
+type ChannelRepository interface {
+	CreateChannel(ctx context.Context, arg repository.CreateChannelParams) (repository.Channel, error)
+	GetChannelByID(ctx context.Context, id uuid.UUID) (repository.Channel, error)
+	GetChannelByHandle(ctx context.Context, handle string) (repository.Channel, error)
+	GetChannelByUserID(ctx context.Context, userID pgtype.UUID) (repository.Channel, error)
+	UpdateChannel(ctx context.Context, arg repository.UpdateChannelParams) (repository.Channel, error)
 }
 
 // Compile-time guard: PostgresRepository must satisfy Repository in full.
