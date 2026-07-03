@@ -19,3 +19,7 @@ setup-db:
 	docker-compose up -d postgres
 	sleep 3
 	make migrate-up
+
+seed-admin:
+	@test -n "$(EMAIL)" || (echo "usage: make seed-admin EMAIL=you@example.com" && exit 1)
+	docker exec yiyu psql -U dawit -d yiyu -c "UPDATE users SET role = 'admin' WHERE email = '$(EMAIL)';"

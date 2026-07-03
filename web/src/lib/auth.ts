@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 
-const apiUrl = process.env.API_URL ?? "http://localhost:8081";
+const apiUrl = process.env.API_URL ?? "http://localhost:8082";
 
 export type User = {
   id: string;

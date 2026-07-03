@@ -34,7 +34,7 @@ make setup-db      # starts Postgres in Docker and applies migrations
 DATABASE_URL="postgres://dawit:dawit@localhost:55432/yiyu?sslmode=disable" go run ./cmd/api
 ```
 
-The server listens on `:8081`.
+The server listens on `:8082`.
 
 ### Useful Makefile targets
 
@@ -45,6 +45,7 @@ The server listens on `:8081`.
 | `make migrate-up` | Apply pending migrations |
 | `make migrate-down` | Roll back the last migration |
 | `make migrate-status` | Show migration status |
+| `make seed-admin EMAIL=you@example.com` | Promote an existing signed-up account to `admin` |
 | `make setup-db` | Start Postgres and apply all migrations |
 
 ### Regenerating SQL code
@@ -63,6 +64,12 @@ sqlc generate
 | `POST` | `/login` | — | Log in, starts a session |
 | `POST` | `/logout` | — | Ends the current session |
 | `GET` | `/me` | session cookie | Returns the current user |
+| `GET` | `/admin/users` | admin session | List users (paginated via `?limit=&offset=`) |
+| `PATCH` | `/admin/users/{id}/role` | admin session | Change a user's role (`user`, `admin`, `moderator`) |
+| `DELETE` | `/admin/users/{id}` | admin session | Soft-delete a user and kill their active sessions |
+
+There's no self-serve way to become an admin — sign up normally, then run
+`make seed-admin EMAIL=you@example.com` to promote that account.
 
 ## Project layout
 

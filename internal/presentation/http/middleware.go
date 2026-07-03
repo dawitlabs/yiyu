@@ -37,3 +37,16 @@ func RequireAuth(repo authRepository) func(http.Handler) http.Handler {
 		})
 	}
 }
+
+// RequireAdmin must run after RequireAuth — it reads the user RequireAuth
+// already put on the context, it doesn't authenticate on its own.
+func RequireAdmin(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, ok := UserFromContext(r.Context())
+		if !ok || user.Role != repository.UserRoleAdmin {
+			http.Error(w, "forbidden", http.StatusForbidden)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
