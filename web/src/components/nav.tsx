@@ -9,9 +9,11 @@ import type { Channel } from "@/lib/channels";
 export function Nav({
   user,
   channel,
+  unreadNotifications,
 }: {
   user: User | null;
   channel: Channel | null;
+  unreadNotifications: number;
 }) {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -53,6 +55,13 @@ export function Nav({
               className="text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white"
             >
               History
+            </Link>
+            <Link
+              href="/notifications"
+              className="text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white"
+            >
+              Notifications
+              {unreadNotifications > 0 ? ` (${unreadNotifications})` : ""}
             </Link>
             <Link
               href={channel ? `/channel/${channel.handle}` : "/channel/new"}
