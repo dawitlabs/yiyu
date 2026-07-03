@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { AddToPlaylist } from "@/components/add-to-playlist";
 import { CommentSection } from "@/components/comment-section";
 import { ReactionButtons } from "@/components/reaction-buttons";
 import { ReportButton } from "@/components/report-button";
@@ -6,6 +7,8 @@ import { VideoPlayer } from "@/components/video-player";
 import { serverFetch } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
 import type { Comment } from "@/lib/comments";
+import { getMyChannel } from "@/lib/my-channel";
+import type { Playlist } from "@/lib/playlists";
 import type { Video } from "@/lib/videos";
 
 export default async function WatchPage({
@@ -15,10 +18,11 @@ export default async function WatchPage({
 }) {
   const { id } = await params;
 
-  const [res, commentsRes, user] = await Promise.all([
+  const [res, commentsRes, user, myChannel] = await Promise.all([
     serverFetch(`/videos/${id}`),
     serverFetch(`/videos/${id}/comments`),
     getCurrentUser(),
+    getMyChannel(),
   ]);
   if (!res.ok) {
     notFound();
@@ -26,6 +30,16 @@ export default async function WatchPage({
 
   const video: Video = await res.json();
   const comments: Comment[] = commentsRes.ok ? await commentsRes.json() : [];
+
+  let myPlaylists: Playlist[] = [];
+  if (myChannel) {
+    const playlistsRes = await serverFetch(
+      `/channels/${myChannel.handle}/playlists`,
+    );
+    if (playlistsRes.ok) {
+      myPlaylists = await playlistsRes.json();
+    }
+  }
 
   let initialReaction: "like" | "dislike" | null = null;
   if (user) {
@@ -68,8 +82,11 @@ export default async function WatchPage({
         </p>
       )}
       {user && (
-        <div className="mt-3">
+        <div className="mt-3 flex items-center gap-4">
           <ReportButton targetType="videos" targetId={video.id} />
+          {myChannel && (
+            <AddToPlaylist videoId={video.id} playlists={myPlaylists} />
+          )}
         </div>
       )}
 

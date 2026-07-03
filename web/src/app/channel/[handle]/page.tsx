@@ -6,6 +6,7 @@ import { serverFetch } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
 import type { Channel } from "@/lib/channels";
 import { getMyChannel } from "@/lib/my-channel";
+import type { Playlist } from "@/lib/playlists";
 import type { Video } from "@/lib/videos";
 
 export default async function ChannelPage({
@@ -15,12 +16,14 @@ export default async function ChannelPage({
 }) {
   const { handle } = await params;
 
-  const [channelRes, videosRes, myChannel, user] = await Promise.all([
-    serverFetch(`/channels/${handle}`),
-    serverFetch(`/channels/${handle}/videos`),
-    getMyChannel(),
-    getCurrentUser(),
-  ]);
+  const [channelRes, videosRes, playlistsRes, myChannel, user] =
+    await Promise.all([
+      serverFetch(`/channels/${handle}`),
+      serverFetch(`/channels/${handle}/videos`),
+      serverFetch(`/channels/${handle}/playlists`),
+      getMyChannel(),
+      getCurrentUser(),
+    ]);
 
   if (!channelRes.ok) {
     notFound();
@@ -28,6 +31,9 @@ export default async function ChannelPage({
 
   const channel: Channel = await channelRes.json();
   const videos: Video[] = videosRes.ok ? await videosRes.json() : [];
+  const playlists: Playlist[] = playlistsRes.ok
+    ? await playlistsRes.json()
+    : [];
   const isOwner = myChannel?.handle === channel.handle;
 
   let isSubscribed = false;
@@ -82,6 +88,37 @@ export default async function ChannelPage({
 
       <div className="mt-8">
         <VideoGrid videos={videos} />
+      </div>
+
+      <div className="mt-10">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold tracking-tight">Playlists</h2>
+          {isOwner && (
+            <Link
+              href="/playlist/new"
+              className="text-sm text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white"
+            >
+              New playlist
+            </Link>
+          )}
+        </div>
+        {playlists.length === 0 ? (
+          <p className="mt-3 text-black/60 dark:text-white/60">
+            No playlists yet.
+          </p>
+        ) : (
+          <div className="mt-3 flex flex-col gap-2">
+            {playlists.map((playlist) => (
+              <Link
+                key={playlist.id}
+                href={`/playlist/${playlist.id}`}
+                className="rounded-md border border-black/10 px-4 py-3 text-sm hover:bg-black/[0.02] dark:border-white/10 dark:hover:bg-white/[0.02]"
+              >
+                {playlist.name}
+              </Link>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
