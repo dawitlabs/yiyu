@@ -12,6 +12,7 @@ import (
 )
 
 type Querier interface {
+	AdjustChannelSubscriberCount(ctx context.Context, arg AdjustChannelSubscriberCountParams) (Channel, error)
 	AdjustVideoReactionCounts(ctx context.Context, arg AdjustVideoReactionCountsParams) (Video, error)
 	// ==================== ADMIN QUERIES ====================
 	AdminDeleteUser(ctx context.Context, arg AdminDeleteUserParams) error
@@ -22,11 +23,13 @@ type Querier interface {
 	CreateChannel(ctx context.Context, arg CreateChannelParams) (Channel, error)
 	CreateComment(ctx context.Context, arg CreateCommentParams) (Comment, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
+	CreateSubscription(ctx context.Context, arg CreateSubscriptionParams) (Subscription, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	CreateVideo(ctx context.Context, arg CreateVideoParams) (Video, error)
 	CreateVideoInteraction(ctx context.Context, arg CreateVideoInteractionParams) (VideoInteraction, error)
 	DeleteComment(ctx context.Context, id uuid.UUID) error
 	DeleteSession(ctx context.Context, tokenHash string) error
+	DeleteSubscription(ctx context.Context, arg DeleteSubscriptionParams) error
 	DeleteUser(ctx context.Context, arg DeleteUserParams) (User, error)
 	DeleteUserSessions(ctx context.Context, userID uuid.UUID) error
 	DeleteVideoInteraction(ctx context.Context, arg DeleteVideoInteractionParams) error
@@ -35,6 +38,7 @@ type Querier interface {
 	GetChannelByUserID(ctx context.Context, userID pgtype.UUID) (Channel, error)
 	GetCommentByID(ctx context.Context, id uuid.UUID) (Comment, error)
 	GetSessionWithUser(ctx context.Context, tokenHash string) (GetSessionWithUserRow, error)
+	GetSubscription(ctx context.Context, arg GetSubscriptionParams) (Subscription, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (User, error)
 	GetUserByUsername(ctx context.Context, username string) (User, error)
@@ -46,6 +50,7 @@ type Querier interface {
 	IncrementVideoViews(ctx context.Context, id uuid.UUID) (Video, error)
 	ListCommentsByVideo(ctx context.Context, arg ListCommentsByVideoParams) ([]ListCommentsByVideoRow, error)
 	ListPublicVideos(ctx context.Context, arg ListPublicVideosParams) ([]Video, error)
+	ListSubscriptionFeed(ctx context.Context, arg ListSubscriptionFeedParams) ([]Video, error)
 	ListVideosByChannel(ctx context.Context, arg ListVideosByChannelParams) ([]Video, error)
 	UpdateChannel(ctx context.Context, arg UpdateChannelParams) (Channel, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)

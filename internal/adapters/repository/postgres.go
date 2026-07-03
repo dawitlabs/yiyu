@@ -159,3 +159,11 @@ func (r *PostgresRepository) ListCommentsByVideo(ctx context.Context, arg ListCo
 func (r *PostgresRepository) DeleteComment(ctx context.Context, id uuid.UUID) error {
 	return r.queries.DeleteComment(ctx, id)
 }
+
+func (r *PostgresRepository) GetSubscription(ctx context.Context, arg GetSubscriptionParams) (Subscription, error) {
+	return r.queries.GetSubscription(ctx, arg)
+}
+
+func (r *PostgresRepository) ListSubscriptionFeed(ctx context.Context, arg ListSubscriptionFeedParams) ([]Video, error) {
+	return r.queries.ListSubscriptionFeed(ctx, arg)
+}

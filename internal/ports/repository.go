@@ -14,6 +14,7 @@ type Repository interface {
 	VideoRepository
 	ChannelRepository
 	CommentRepository
+	SubscriptionRepository
 	// ShareRepository
 	// FavouriteRepository
 	// WatchlistRepository
@@ -70,6 +71,11 @@ type CommentRepository interface {
 	GetCommentByID(ctx context.Context, id uuid.UUID) (repository.Comment, error)
 	ListCommentsByVideo(ctx context.Context, arg repository.ListCommentsByVideoParams) ([]repository.ListCommentsByVideoRow, error)
 	DeleteComment(ctx context.Context, id uuid.UUID) error
+}
+
+type SubscriptionRepository interface {
+	GetSubscription(ctx context.Context, arg repository.GetSubscriptionParams) (repository.Subscription, error)
+	ListSubscriptionFeed(ctx context.Context, arg repository.ListSubscriptionFeedParams) ([]repository.Video, error)
 }
 
 // Compile-time guard: PostgresRepository must satisfy Repository in full.
