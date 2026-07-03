@@ -283,3 +283,19 @@ func (r *PostgresRepository) ListCaptionsByVideo(ctx context.Context, videoID pg
 func (r *PostgresRepository) DeleteCaption(ctx context.Context, id uuid.UUID) error {
 	return r.queries.DeleteCaption(ctx, id)
 }
+
+func (r *PostgresRepository) CreateChapter(ctx context.Context, arg CreateChapterParams) (VideoChapter, error) {
+	return r.queries.CreateChapter(ctx, arg)
+}
+
+func (r *PostgresRepository) GetChapterByID(ctx context.Context, id uuid.UUID) (VideoChapter, error) {
+	return r.queries.GetChapterByID(ctx, id)
+}
+
+func (r *PostgresRepository) ListChaptersByVideo(ctx context.Context, videoID pgtype.UUID) ([]VideoChapter, error) {
+	return r.queries.ListChaptersByVideo(ctx, videoID)
+}
+
+func (r *PostgresRepository) DeleteChapter(ctx context.Context, id uuid.UUID) error {
+	return r.queries.DeleteChapter(ctx, id)
+}

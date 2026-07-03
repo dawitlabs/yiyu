@@ -186,6 +186,14 @@ type VideoCaption struct {
 	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
 }
 
+type VideoChapter struct {
+	ID           uuid.UUID          `db:"id" json:"id"`
+	VideoID      pgtype.UUID        `db:"video_id" json:"video_id"`
+	Title        string             `db:"title" json:"title"`
+	StartSeconds int32              `db:"start_seconds" json:"start_seconds"`
+	CreatedAt    pgtype.Timestamptz `db:"created_at" json:"created_at"`
+}
+
 type VideoFile struct {
 	ID         uuid.UUID          `db:"id" json:"id"`
 	VideoID    pgtype.UUID        `db:"video_id" json:"video_id"`

@@ -20,6 +20,7 @@ type Repository interface {
 	PlaylistRepository
 	NotificationRepository
 	CaptionRepository
+	ChapterRepository
 
 	// WithTx runs fn inside a single transaction, giving it access to every
 	// query method (repository.Querier is the full sqlc-generated set) —
@@ -120,6 +121,13 @@ type CaptionRepository interface {
 	GetCaptionByID(ctx context.Context, id uuid.UUID) (repository.VideoCaption, error)
 	ListCaptionsByVideo(ctx context.Context, videoID pgtype.UUID) ([]repository.VideoCaption, error)
 	DeleteCaption(ctx context.Context, id uuid.UUID) error
+}
+
+type ChapterRepository interface {
+	CreateChapter(ctx context.Context, arg repository.CreateChapterParams) (repository.VideoChapter, error)
+	GetChapterByID(ctx context.Context, id uuid.UUID) (repository.VideoChapter, error)
+	ListChaptersByVideo(ctx context.Context, videoID pgtype.UUID) ([]repository.VideoChapter, error)
+	DeleteChapter(ctx context.Context, id uuid.UUID) error
 }
 
 // Compile-time guard: PostgresRepository must satisfy Repository in full.
