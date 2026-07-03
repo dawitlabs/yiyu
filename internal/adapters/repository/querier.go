@@ -27,6 +27,7 @@ type Querier interface {
 	AdminUpdateUserRole(ctx context.Context, arg AdminUpdateUserRoleParams) (User, error)
 	ClaimNextPendingVideo(ctx context.Context) (Video, error)
 	CompleteVideoProcessing(ctx context.Context, arg CompleteVideoProcessingParams) (Video, error)
+	CountNewSubscribersSince(ctx context.Context, arg CountNewSubscribersSinceParams) (int64, error)
 	CountUnreadNotifications(ctx context.Context, userID pgtype.UUID) (int64, error)
 	CreateCaption(ctx context.Context, arg CreateCaptionParams) (VideoCaption, error)
 	CreateChannel(ctx context.Context, arg CreateChannelParams) (Channel, error)
@@ -54,6 +55,7 @@ type Querier interface {
 	DeleteVideoInteraction(ctx context.Context, arg DeleteVideoInteractionParams) error
 	FailVideoProcessing(ctx context.Context, id uuid.UUID) error
 	GetCaptionByID(ctx context.Context, id uuid.UUID) (VideoCaption, error)
+	GetChannelAnalyticsSummary(ctx context.Context, channelID pgtype.UUID) (GetChannelAnalyticsSummaryRow, error)
 	GetChannelByHandle(ctx context.Context, handle string) (Channel, error)
 	GetChannelByID(ctx context.Context, id uuid.UUID) (Channel, error)
 	GetChannelByUserID(ctx context.Context, userID pgtype.UUID) (Channel, error)
@@ -77,6 +79,7 @@ type Querier interface {
 	// meant to be used once the caller is confirmed as the channel's owner.
 	ListAllPlaylistsByChannel(ctx context.Context, arg ListAllPlaylistsByChannelParams) ([]Playlist, error)
 	ListCaptionsByVideo(ctx context.Context, videoID pgtype.UUID) ([]VideoCaption, error)
+	ListChannelVideoStats(ctx context.Context, arg ListChannelVideoStatsParams) ([]ListChannelVideoStatsRow, error)
 	ListChaptersByVideo(ctx context.Context, videoID pgtype.UUID) ([]VideoChapter, error)
 	ListCommentReplies(ctx context.Context, arg ListCommentRepliesParams) ([]ListCommentRepliesRow, error)
 	// Top-level only (parent_id IS NULL) — replies are fetched separately via

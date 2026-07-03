@@ -299,3 +299,15 @@ func (r *PostgresRepository) ListChaptersByVideo(ctx context.Context, videoID pg
 func (r *PostgresRepository) DeleteChapter(ctx context.Context, id uuid.UUID) error {
 	return r.queries.DeleteChapter(ctx, id)
 }
+
+func (r *PostgresRepository) GetChannelAnalyticsSummary(ctx context.Context, channelID pgtype.UUID) (GetChannelAnalyticsSummaryRow, error) {
+	return r.queries.GetChannelAnalyticsSummary(ctx, channelID)
+}
+
+func (r *PostgresRepository) ListChannelVideoStats(ctx context.Context, arg ListChannelVideoStatsParams) ([]ListChannelVideoStatsRow, error) {
+	return r.queries.ListChannelVideoStats(ctx, arg)
+}
+
+func (r *PostgresRepository) CountNewSubscribersSince(ctx context.Context, arg CountNewSubscribersSinceParams) (int64, error) {
+	return r.queries.CountNewSubscribersSince(ctx, arg)
+}

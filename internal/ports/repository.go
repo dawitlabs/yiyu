@@ -21,6 +21,7 @@ type Repository interface {
 	NotificationRepository
 	CaptionRepository
 	ChapterRepository
+	AnalyticsRepository
 
 	// WithTx runs fn inside a single transaction, giving it access to every
 	// query method (repository.Querier is the full sqlc-generated set) —
@@ -128,6 +129,12 @@ type ChapterRepository interface {
 	GetChapterByID(ctx context.Context, id uuid.UUID) (repository.VideoChapter, error)
 	ListChaptersByVideo(ctx context.Context, videoID pgtype.UUID) ([]repository.VideoChapter, error)
 	DeleteChapter(ctx context.Context, id uuid.UUID) error
+}
+
+type AnalyticsRepository interface {
+	GetChannelAnalyticsSummary(ctx context.Context, channelID pgtype.UUID) (repository.GetChannelAnalyticsSummaryRow, error)
+	ListChannelVideoStats(ctx context.Context, arg repository.ListChannelVideoStatsParams) ([]repository.ListChannelVideoStatsRow, error)
+	CountNewSubscribersSince(ctx context.Context, arg repository.CountNewSubscribersSinceParams) (int64, error)
 }
 
 // Compile-time guard: PostgresRepository must satisfy Repository in full.

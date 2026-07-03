@@ -71,6 +71,7 @@ func main() {
 	notification := httpapi.NewNotificationHandler(repo)
 	caption := httpapi.NewCaptionHandler(repo)
 	chapter := httpapi.NewChapterHandler(repo)
+	analytics := httpapi.NewAnalyticsHandler(repo)
 
 	requireAuth := httpapi.RequireAuth(repo)
 	optionalAuth := httpapi.OptionalAuth(repo)
@@ -157,6 +158,8 @@ func main() {
 	mux.Handle("POST /videos/{id}/chapters", requireAuth(http.HandlerFunc(chapter.CreateChapter)))
 	mux.HandleFunc("GET /videos/{id}/chapters", chapter.ListChapters)
 	mux.Handle("DELETE /chapters/{id}", requireAuth(http.HandlerFunc(chapter.DeleteChapter)))
+
+	mux.Handle("GET /channels/me/analytics", requireAuth(http.HandlerFunc(analytics.GetMyChannelAnalytics)))
 
 	// General per-IP budget across every route — the stricter auth limiter
 	// above still applies underneath this on /signup and /login.
