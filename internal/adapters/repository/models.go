@@ -5,11 +5,11 @@
 package repository
 
 import (
-	"database/sql"
 	"database/sql/driver"
 	"fmt"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type UserRole string
@@ -56,123 +56,132 @@ func (ns NullUserRole) Value() (driver.Value, error) {
 }
 
 type Channel struct {
-	ID              uuid.UUID      `db:"id" json:"id"`
-	UserID          uuid.NullUUID  `db:"user_id" json:"user_id"`
-	Handle          string         `db:"handle" json:"handle"`
-	Name            string         `db:"name" json:"name"`
-	Description     sql.NullString `db:"description" json:"description"`
-	AvatarUrl       sql.NullString `db:"avatar_url" json:"avatar_url"`
-	BannerUrl       sql.NullString `db:"banner_url" json:"banner_url"`
-	SubscriberCount sql.NullInt64  `db:"subscriber_count" json:"subscriber_count"`
-	CreatedAt       sql.NullTime   `db:"created_at" json:"created_at"`
-	UpdatedAt       sql.NullTime   `db:"updated_at" json:"updated_at"`
+	ID              uuid.UUID          `db:"id" json:"id"`
+	UserID          pgtype.UUID        `db:"user_id" json:"user_id"`
+	Handle          string             `db:"handle" json:"handle"`
+	Name            string             `db:"name" json:"name"`
+	Description     pgtype.Text        `db:"description" json:"description"`
+	AvatarUrl       pgtype.Text        `db:"avatar_url" json:"avatar_url"`
+	BannerUrl       pgtype.Text        `db:"banner_url" json:"banner_url"`
+	SubscriberCount pgtype.Int8        `db:"subscriber_count" json:"subscriber_count"`
+	CreatedAt       pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 }
 
 type Comment struct {
-	ID         uuid.UUID     `db:"id" json:"id"`
-	VideoID    uuid.NullUUID `db:"video_id" json:"video_id"`
-	UserID     uuid.NullUUID `db:"user_id" json:"user_id"`
-	ParentID   uuid.NullUUID `db:"parent_id" json:"parent_id"`
-	Content    string        `db:"content" json:"content"`
-	LikesCount sql.NullInt64 `db:"likes_count" json:"likes_count"`
-	IsDeleted  sql.NullBool  `db:"is_deleted" json:"is_deleted"`
-	CreatedAt  sql.NullTime  `db:"created_at" json:"created_at"`
-	UpdatedAt  sql.NullTime  `db:"updated_at" json:"updated_at"`
+	ID         uuid.UUID          `db:"id" json:"id"`
+	VideoID    pgtype.UUID        `db:"video_id" json:"video_id"`
+	UserID     pgtype.UUID        `db:"user_id" json:"user_id"`
+	ParentID   pgtype.UUID        `db:"parent_id" json:"parent_id"`
+	Content    string             `db:"content" json:"content"`
+	LikesCount pgtype.Int8        `db:"likes_count" json:"likes_count"`
+	IsDeleted  pgtype.Bool        `db:"is_deleted" json:"is_deleted"`
+	CreatedAt  pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt  pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 }
 
 type Playlist struct {
-	ID          uuid.UUID      `db:"id" json:"id"`
-	ChannelID   uuid.NullUUID  `db:"channel_id" json:"channel_id"`
-	Name        string         `db:"name" json:"name"`
-	Description sql.NullString `db:"description" json:"description"`
-	IsPublic    sql.NullBool   `db:"is_public" json:"is_public"`
-	CreatedAt   sql.NullTime   `db:"created_at" json:"created_at"`
-	UpdatedAt   sql.NullTime   `db:"updated_at" json:"updated_at"`
+	ID          uuid.UUID          `db:"id" json:"id"`
+	ChannelID   pgtype.UUID        `db:"channel_id" json:"channel_id"`
+	Name        string             `db:"name" json:"name"`
+	Description pgtype.Text        `db:"description" json:"description"`
+	IsPublic    pgtype.Bool        `db:"is_public" json:"is_public"`
+	CreatedAt   pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 }
 
 type PlaylistVideo struct {
-	PlaylistID uuid.UUID    `db:"playlist_id" json:"playlist_id"`
-	VideoID    uuid.UUID    `db:"video_id" json:"video_id"`
-	Position   int32        `db:"position" json:"position"`
-	AddedAt    sql.NullTime `db:"added_at" json:"added_at"`
+	PlaylistID uuid.UUID          `db:"playlist_id" json:"playlist_id"`
+	VideoID    uuid.UUID          `db:"video_id" json:"video_id"`
+	Position   int32              `db:"position" json:"position"`
+	AddedAt    pgtype.Timestamptz `db:"added_at" json:"added_at"`
 }
 
 type Report struct {
-	ID         uuid.UUID      `db:"id" json:"id"`
-	ReporterID uuid.NullUUID  `db:"reporter_id" json:"reporter_id"`
-	VideoID    uuid.NullUUID  `db:"video_id" json:"video_id"`
-	CommentID  uuid.NullUUID  `db:"comment_id" json:"comment_id"`
-	Reason     string         `db:"reason" json:"reason"`
-	Status     sql.NullString `db:"status" json:"status"`
-	CreatedAt  sql.NullTime   `db:"created_at" json:"created_at"`
+	ID         uuid.UUID          `db:"id" json:"id"`
+	ReporterID pgtype.UUID        `db:"reporter_id" json:"reporter_id"`
+	VideoID    pgtype.UUID        `db:"video_id" json:"video_id"`
+	CommentID  pgtype.UUID        `db:"comment_id" json:"comment_id"`
+	Reason     string             `db:"reason" json:"reason"`
+	Status     pgtype.Text        `db:"status" json:"status"`
+	CreatedAt  pgtype.Timestamptz `db:"created_at" json:"created_at"`
+}
+
+type Session struct {
+	TokenHash string             `db:"token_hash" json:"token_hash"`
+	UserID    uuid.UUID          `db:"user_id" json:"user_id"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	ExpiresAt pgtype.Timestamptz `db:"expires_at" json:"expires_at"`
 }
 
 type Subscription struct {
-	ID        uuid.UUID     `db:"id" json:"id"`
-	ChannelID uuid.NullUUID `db:"channel_id" json:"channel_id"`
-	UserID    uuid.NullUUID `db:"user_id" json:"user_id"`
-	CreatedAt sql.NullTime  `db:"created_at" json:"created_at"`
+	ID        uuid.UUID          `db:"id" json:"id"`
+	ChannelID pgtype.UUID        `db:"channel_id" json:"channel_id"`
+	UserID    pgtype.UUID        `db:"user_id" json:"user_id"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
 }
 
 type User struct {
-	ID           uuid.UUID      `db:"id" json:"id"`
-	Username     string         `db:"username" json:"username"`
-	Email        string         `db:"email" json:"email"`
-	DisplayName  sql.NullString `db:"display_name" json:"display_name"`
-	Bio          sql.NullString `db:"bio" json:"bio"`
-	AvatarUrl    sql.NullString `db:"avatar_url" json:"avatar_url"`
-	Role         UserRole       `db:"role" json:"role"`
-	IsActive     sql.NullBool   `db:"is_active" json:"is_active"`
-	PasswordHash string         `db:"password_hash" json:"password_hash"`
-	CreatedAt    sql.NullTime   `db:"created_at" json:"created_at"`
-	UpdatedAt    sql.NullTime   `db:"updated_at" json:"updated_at"`
+	ID           uuid.UUID          `db:"id" json:"id"`
+	Username     string             `db:"username" json:"username"`
+	Email        string             `db:"email" json:"email"`
+	DisplayName  pgtype.Text        `db:"display_name" json:"display_name"`
+	Bio          pgtype.Text        `db:"bio" json:"bio"`
+	AvatarUrl    pgtype.Text        `db:"avatar_url" json:"avatar_url"`
+	Role         UserRole           `db:"role" json:"role"`
+	IsActive     pgtype.Bool        `db:"is_active" json:"is_active"`
+	PasswordHash string             `db:"password_hash" json:"password_hash"`
+	CreatedAt    pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	DeletedAt    pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
+	DeletedBy    pgtype.UUID        `db:"deleted_by" json:"deleted_by"`
 }
 
 type Video struct {
-	ID             uuid.UUID      `db:"id" json:"id"`
-	ChannelID      uuid.NullUUID  `db:"channel_id" json:"channel_id"`
-	Title          string         `db:"title" json:"title"`
-	Description    sql.NullString `db:"description" json:"description"`
-	Status         string         `db:"status" json:"status"`
-	Visibility     string         `db:"visibility" json:"visibility"`
-	ViewsCount     sql.NullInt64  `db:"views_count" json:"views_count"`
-	LikesCount     sql.NullInt64  `db:"likes_count" json:"likes_count"`
-	DislikesCount  sql.NullInt64  `db:"dislikes_count" json:"dislikes_count"`
-	ThumbnailUrl   sql.NullString `db:"thumbnail_url" json:"thumbnail_url"`
-	OriginalUrl    sql.NullString `db:"original_url" json:"original_url"`
-	HlsPlaylistUrl sql.NullString `db:"hls_playlist_url" json:"hls_playlist_url"`
-	Category       sql.NullString `db:"category" json:"category"`
-	Tags           []string       `db:"tags" json:"tags"`
-	UploadedAt     sql.NullTime   `db:"uploaded_at" json:"uploaded_at"`
-	PublishedAt    sql.NullTime   `db:"published_at" json:"published_at"`
-	CreatedAt      sql.NullTime   `db:"created_at" json:"created_at"`
-	UpdatedAt      sql.NullTime   `db:"updated_at" json:"updated_at"`
-	Duration       sql.NullInt32  `db:"duration" json:"duration"`
+	ID             uuid.UUID          `db:"id" json:"id"`
+	ChannelID      pgtype.UUID        `db:"channel_id" json:"channel_id"`
+	Title          string             `db:"title" json:"title"`
+	Description    pgtype.Text        `db:"description" json:"description"`
+	Status         string             `db:"status" json:"status"`
+	Visibility     string             `db:"visibility" json:"visibility"`
+	ViewsCount     pgtype.Int8        `db:"views_count" json:"views_count"`
+	LikesCount     pgtype.Int8        `db:"likes_count" json:"likes_count"`
+	DislikesCount  pgtype.Int8        `db:"dislikes_count" json:"dislikes_count"`
+	ThumbnailUrl   pgtype.Text        `db:"thumbnail_url" json:"thumbnail_url"`
+	OriginalUrl    pgtype.Text        `db:"original_url" json:"original_url"`
+	HlsPlaylistUrl pgtype.Text        `db:"hls_playlist_url" json:"hls_playlist_url"`
+	Category       pgtype.Text        `db:"category" json:"category"`
+	Tags           []string           `db:"tags" json:"tags"`
+	UploadedAt     pgtype.Timestamptz `db:"uploaded_at" json:"uploaded_at"`
+	PublishedAt    pgtype.Timestamptz `db:"published_at" json:"published_at"`
+	CreatedAt      pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt      pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	Duration       pgtype.Int4        `db:"duration" json:"duration"`
 }
 
 type VideoFile struct {
-	ID         uuid.UUID     `db:"id" json:"id"`
-	VideoID    uuid.NullUUID `db:"video_id" json:"video_id"`
-	Resolution string        `db:"resolution" json:"resolution"`
-	Url        string        `db:"url" json:"url"`
-	FileSize   sql.NullInt64 `db:"file_size" json:"file_size"`
-	Bitrate    sql.NullInt32 `db:"bitrate" json:"bitrate"`
-	CreatedAt  sql.NullTime  `db:"created_at" json:"created_at"`
+	ID         uuid.UUID          `db:"id" json:"id"`
+	VideoID    pgtype.UUID        `db:"video_id" json:"video_id"`
+	Resolution string             `db:"resolution" json:"resolution"`
+	Url        string             `db:"url" json:"url"`
+	FileSize   pgtype.Int8        `db:"file_size" json:"file_size"`
+	Bitrate    pgtype.Int4        `db:"bitrate" json:"bitrate"`
+	CreatedAt  pgtype.Timestamptz `db:"created_at" json:"created_at"`
 }
 
 type VideoInteraction struct {
-	ID        uuid.UUID     `db:"id" json:"id"`
-	VideoID   uuid.NullUUID `db:"video_id" json:"video_id"`
-	UserID    uuid.NullUUID `db:"user_id" json:"user_id"`
-	Type      string        `db:"type" json:"type"`
-	CreatedAt sql.NullTime  `db:"created_at" json:"created_at"`
+	ID        uuid.UUID          `db:"id" json:"id"`
+	VideoID   pgtype.UUID        `db:"video_id" json:"video_id"`
+	UserID    pgtype.UUID        `db:"user_id" json:"user_id"`
+	Type      string             `db:"type" json:"type"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
 }
 
 type WatchHistory struct {
-	ID        uuid.UUID     `db:"id" json:"id"`
-	UserID    uuid.NullUUID `db:"user_id" json:"user_id"`
-	VideoID   uuid.NullUUID `db:"video_id" json:"video_id"`
-	WatchedAt sql.NullTime  `db:"watched_at" json:"watched_at"`
-	Progress  sql.NullInt32 `db:"progress" json:"progress"`
-	Completed sql.NullBool  `db:"completed" json:"completed"`
+	ID        uuid.UUID          `db:"id" json:"id"`
+	UserID    pgtype.UUID        `db:"user_id" json:"user_id"`
+	VideoID   pgtype.UUID        `db:"video_id" json:"video_id"`
+	WatchedAt pgtype.Timestamptz `db:"watched_at" json:"watched_at"`
+	Progress  pgtype.Int4        `db:"progress" json:"progress"`
+	Completed pgtype.Bool        `db:"completed" json:"completed"`
 }

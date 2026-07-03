@@ -7,27 +7,156 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const adminDeleteUser = `-- name: AdminDeleteUser :exec
+
+UPDATE users
+SET is_active = false,
+    deleted_at = NOW(),
+    deleted_by = $2,
+    updated_at = NOW()
+WHERE id = $1
+`
+
+type AdminDeleteUserParams struct {
+	ID        uuid.UUID   `db:"id" json:"id"`
+	DeletedBy pgtype.UUID `db:"deleted_by" json:"deleted_by"`
+}
+
+// ==================== ADMIN QUERIES ====================
+func (q *Queries) AdminDeleteUser(ctx context.Context, arg AdminDeleteUserParams) error {
+	_, err := q.db.Exec(ctx, adminDeleteUser, arg.ID, arg.DeletedBy)
+	return err
+}
+
+const adminGetAllUsers = `-- name: AdminGetAllUsers :many
+SELECT id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by FROM users 
+WHERE deleted_at IS NULL 
+ORDER BY created_at DESC 
+LIMIT $1 OFFSET $2
+`
+
+type AdminGetAllUsersParams struct {
+	Limit  int32 `db:"limit" json:"limit"`
+	Offset int32 `db:"offset" json:"offset"`
+}
+
+func (q *Queries) AdminGetAllUsers(ctx context.Context, arg AdminGetAllUsersParams) ([]User, error) {
+	rows, err := q.db.Query(ctx, adminGetAllUsers, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []User
+	for rows.Next() {
+		var i User
+		if err := rows.Scan(
+			&i.ID,
+			&i.Username,
+			&i.Email,
+			&i.DisplayName,
+			&i.Bio,
+			&i.AvatarUrl,
+			&i.Role,
+			&i.IsActive,
+			&i.PasswordHash,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+			&i.DeletedBy,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const adminGetUserWithDeleted = `-- name: AdminGetUserWithDeleted :one
+SELECT id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by FROM users WHERE id = $1
+`
+
+func (q *Queries) AdminGetUserWithDeleted(ctx context.Context, id uuid.UUID) (User, error) {
+	row := q.db.QueryRow(ctx, adminGetUserWithDeleted, id)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.DisplayName,
+		&i.Bio,
+		&i.AvatarUrl,
+		&i.Role,
+		&i.IsActive,
+		&i.PasswordHash,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.DeletedBy,
+	)
+	return i, err
+}
+
+const adminUpdateUserRole = `-- name: AdminUpdateUserRole :one
+UPDATE users 
+SET role = $2, 
+    updated_at = NOW()
+WHERE id = $1 
+RETURNING id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by
+`
+
+type AdminUpdateUserRoleParams struct {
+	ID   uuid.UUID `db:"id" json:"id"`
+	Role UserRole  `db:"role" json:"role"`
+}
+
+// Optional useful admin queries:
+func (q *Queries) AdminUpdateUserRole(ctx context.Context, arg AdminUpdateUserRoleParams) (User, error) {
+	row := q.db.QueryRow(ctx, adminUpdateUserRole, arg.ID, arg.Role)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.DisplayName,
+		&i.Bio,
+		&i.AvatarUrl,
+		&i.Role,
+		&i.IsActive,
+		&i.PasswordHash,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.DeletedBy,
+	)
+	return i, err
+}
+
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (username, email, password_hash, role, display_name, bio, avatar_url) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at
+INSERT INTO users (username, email, password_hash, role, display_name, bio, avatar_url)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by
 `
 
 type CreateUserParams struct {
-	Username     string         `db:"username" json:"username"`
-	Email        string         `db:"email" json:"email"`
-	PasswordHash string         `db:"password_hash" json:"password_hash"`
-	Role         UserRole       `db:"role" json:"role"`
-	DisplayName  sql.NullString `db:"display_name" json:"display_name"`
-	Bio          sql.NullString `db:"bio" json:"bio"`
-	AvatarUrl    sql.NullString `db:"avatar_url" json:"avatar_url"`
+	Username     string      `db:"username" json:"username"`
+	Email        string      `db:"email" json:"email"`
+	PasswordHash string      `db:"password_hash" json:"password_hash"`
+	Role         UserRole    `db:"role" json:"role"`
+	DisplayName  pgtype.Text `db:"display_name" json:"display_name"`
+	Bio          pgtype.Text `db:"bio" json:"bio"`
+	AvatarUrl    pgtype.Text `db:"avatar_url" json:"avatar_url"`
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, createUser,
+	row := q.db.QueryRow(ctx, createUser,
 		arg.Username,
 		arg.Email,
 		arg.PasswordHash,
@@ -49,16 +178,55 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.DeletedBy,
+	)
+	return i, err
+}
+
+const deleteUser = `-- name: DeleteUser :one
+UPDATE users
+SET is_active = false,
+    deleted_at = NOW(),
+    deleted_by = $2,
+    updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by
+`
+
+type DeleteUserParams struct {
+	ID        uuid.UUID   `db:"id" json:"id"`
+	DeletedBy pgtype.UUID `db:"deleted_by" json:"deleted_by"`
+}
+
+func (q *Queries) DeleteUser(ctx context.Context, arg DeleteUserParams) (User, error) {
+	row := q.db.QueryRow(ctx, deleteUser, arg.ID, arg.DeletedBy)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.Username,
+		&i.Email,
+		&i.DisplayName,
+		&i.Bio,
+		&i.AvatarUrl,
+		&i.Role,
+		&i.IsActive,
+		&i.PasswordHash,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.DeletedBy,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at FROM users WHERE email = $1 AND is_active = true
+SELECT id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by FROM users 
+WHERE email = $1 AND is_active = true AND deleted_at IS NULL
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUserByEmail, email)
+	row := q.db.QueryRow(ctx, getUserByEmail, email)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -72,16 +240,19 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.DeletedBy,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at FROM users WHERE id = $1 AND is_active = true
+SELECT id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by FROM users 
+WHERE id = $1 AND is_active = true AND deleted_at IS NULL
 `
 
 func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUserByID, id)
+	row := q.db.QueryRow(ctx, getUserByID, id)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -95,16 +266,19 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.DeletedBy,
 	)
 	return i, err
 }
 
 const getUserByUsername = `-- name: GetUserByUsername :one
-SELECT id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at FROM users WHERE username = $1 AND is_active = true
+SELECT id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by FROM users 
+WHERE username = $1 AND is_active = true AND deleted_at IS NULL
 `
 
 func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User, error) {
-	row := q.db.QueryRowContext(ctx, getUserByUsername, username)
+	row := q.db.QueryRow(ctx, getUserByUsername, username)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -118,23 +292,42 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.DeletedBy,
 	)
 	return i, err
 }
 
+const getUserRole = `-- name: GetUserRole :one
+SELECT role FROM users WHERE id = $1
+`
+
+func (q *Queries) GetUserRole(ctx context.Context, id uuid.UUID) (UserRole, error) {
+	row := q.db.QueryRow(ctx, getUserRole, id)
+	var role UserRole
+	err := row.Scan(&role)
+	return role, err
+}
+
 const updateUser = `-- name: UpdateUser :one
-UPDATE users SET display_name = $2, bio = $3, avatar_url = $4, updated_at = NOW() where id = $1 RETURNING id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at
+UPDATE users 
+SET display_name = $2, 
+    bio = $3, 
+    avatar_url = $4, 
+    updated_at = NOW()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by
 `
 
 type UpdateUserParams struct {
-	ID          uuid.UUID      `db:"id" json:"id"`
-	DisplayName sql.NullString `db:"display_name" json:"display_name"`
-	Bio         sql.NullString `db:"bio" json:"bio"`
-	AvatarUrl   sql.NullString `db:"avatar_url" json:"avatar_url"`
+	ID          uuid.UUID   `db:"id" json:"id"`
+	DisplayName pgtype.Text `db:"display_name" json:"display_name"`
+	Bio         pgtype.Text `db:"bio" json:"bio"`
+	AvatarUrl   pgtype.Text `db:"avatar_url" json:"avatar_url"`
 }
 
 func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, updateUser,
+	row := q.db.QueryRow(ctx, updateUser,
 		arg.ID,
 		arg.DisplayName,
 		arg.Bio,
@@ -153,6 +346,8 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.DeletedBy,
 	)
 	return i, err
 }

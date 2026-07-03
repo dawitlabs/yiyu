@@ -1,4 +1,6 @@
 # Binaries
+/api
+/worker
 *.exe
 *.exe~
 *.dll

@@ -7,10 +7,9 @@ package repository
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/google/uuid"
-	"github.com/lib/pq"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createVideo = `-- name: CreateVideo :one
@@ -18,18 +17,18 @@ INSERT INTO videos (channel_id, title, description , duration, status, visibilit
 `
 
 type CreateVideoParams struct {
-	ChannelID   uuid.NullUUID  `db:"channel_id" json:"channel_id"`
-	Title       string         `db:"title" json:"title"`
-	Description sql.NullString `db:"description" json:"description"`
-	Duration    sql.NullInt32  `db:"duration" json:"duration"`
-	Status      string         `db:"status" json:"status"`
-	Visibility  string         `db:"visibility" json:"visibility"`
-	Category    sql.NullString `db:"category" json:"category"`
-	Tags        []string       `db:"tags" json:"tags"`
+	ChannelID   pgtype.UUID `db:"channel_id" json:"channel_id"`
+	Title       string      `db:"title" json:"title"`
+	Description pgtype.Text `db:"description" json:"description"`
+	Duration    pgtype.Int4 `db:"duration" json:"duration"`
+	Status      string      `db:"status" json:"status"`
+	Visibility  string      `db:"visibility" json:"visibility"`
+	Category    pgtype.Text `db:"category" json:"category"`
+	Tags        []string    `db:"tags" json:"tags"`
 }
 
 func (q *Queries) CreateVideo(ctx context.Context, arg CreateVideoParams) (Video, error) {
-	row := q.db.QueryRowContext(ctx, createVideo,
+	row := q.db.QueryRow(ctx, createVideo,
 		arg.ChannelID,
 		arg.Title,
 		arg.Description,
@@ -37,7 +36,7 @@ func (q *Queries) CreateVideo(ctx context.Context, arg CreateVideoParams) (Video
 		arg.Status,
 		arg.Visibility,
 		arg.Category,
-		pq.Array(arg.Tags),
+		arg.Tags,
 	)
 	var i Video
 	err := row.Scan(
@@ -54,7 +53,7 @@ func (q *Queries) CreateVideo(ctx context.Context, arg CreateVideoParams) (Video
 		&i.OriginalUrl,
 		&i.HlsPlaylistUrl,
 		&i.Category,
-		pq.Array(&i.Tags),
+		&i.Tags,
 		&i.UploadedAt,
 		&i.PublishedAt,
 		&i.CreatedAt,
@@ -69,7 +68,7 @@ SELECT id, channel_id, title, description, status, visibility, views_count, like
 `
 
 func (q *Queries) GetVideoByID(ctx context.Context, id uuid.UUID) (Video, error) {
-	row := q.db.QueryRowContext(ctx, getVideoByID, id)
+	row := q.db.QueryRow(ctx, getVideoByID, id)
 	var i Video
 	err := row.Scan(
 		&i.ID,
@@ -85,7 +84,7 @@ func (q *Queries) GetVideoByID(ctx context.Context, id uuid.UUID) (Video, error)
 		&i.OriginalUrl,
 		&i.HlsPlaylistUrl,
 		&i.Category,
-		pq.Array(&i.Tags),
+		&i.Tags,
 		&i.UploadedAt,
 		&i.PublishedAt,
 		&i.CreatedAt,
@@ -100,7 +99,7 @@ UPDATE videos SET dislikes_count = dislikes_count + 1 WHERE id = $1 RETURNING id
 `
 
 func (q *Queries) IncrementVideoDislikes(ctx context.Context, id uuid.UUID) (Video, error) {
-	row := q.db.QueryRowContext(ctx, incrementVideoDislikes, id)
+	row := q.db.QueryRow(ctx, incrementVideoDislikes, id)
 	var i Video
 	err := row.Scan(
 		&i.ID,
@@ -116,7 +115,7 @@ func (q *Queries) IncrementVideoDislikes(ctx context.Context, id uuid.UUID) (Vid
 		&i.OriginalUrl,
 		&i.HlsPlaylistUrl,
 		&i.Category,
-		pq.Array(&i.Tags),
+		&i.Tags,
 		&i.UploadedAt,
 		&i.PublishedAt,
 		&i.CreatedAt,
@@ -131,7 +130,7 @@ UPDATE videos SET likes_count = likes_count + 1 WHERE id = $1 RETURNING id, chan
 `
 
 func (q *Queries) IncrementVideoLikes(ctx context.Context, id uuid.UUID) (Video, error) {
-	row := q.db.QueryRowContext(ctx, incrementVideoLikes, id)
+	row := q.db.QueryRow(ctx, incrementVideoLikes, id)
 	var i Video
 	err := row.Scan(
 		&i.ID,
@@ -147,7 +146,7 @@ func (q *Queries) IncrementVideoLikes(ctx context.Context, id uuid.UUID) (Video,
 		&i.OriginalUrl,
 		&i.HlsPlaylistUrl,
 		&i.Category,
-		pq.Array(&i.Tags),
+		&i.Tags,
 		&i.UploadedAt,
 		&i.PublishedAt,
 		&i.CreatedAt,
@@ -162,7 +161,7 @@ UPDATE videos SET views_count = views_count + 1 WHERE id = $1 RETURNING id, chan
 `
 
 func (q *Queries) IncrementVideoViews(ctx context.Context, id uuid.UUID) (Video, error) {
-	row := q.db.QueryRowContext(ctx, incrementVideoViews, id)
+	row := q.db.QueryRow(ctx, incrementVideoViews, id)
 	var i Video
 	err := row.Scan(
 		&i.ID,
@@ -178,7 +177,7 @@ func (q *Queries) IncrementVideoViews(ctx context.Context, id uuid.UUID) (Video,
 		&i.OriginalUrl,
 		&i.HlsPlaylistUrl,
 		&i.Category,
-		pq.Array(&i.Tags),
+		&i.Tags,
 		&i.UploadedAt,
 		&i.PublishedAt,
 		&i.CreatedAt,
@@ -193,13 +192,13 @@ SELECT id, channel_id, title, description, status, visibility, views_count, like
 `
 
 type ListVideosByChannelParams struct {
-	ChannelID uuid.NullUUID `db:"channel_id" json:"channel_id"`
-	Limit     int32         `db:"limit" json:"limit"`
-	Offset    int32         `db:"offset" json:"offset"`
+	ChannelID pgtype.UUID `db:"channel_id" json:"channel_id"`
+	Limit     int32       `db:"limit" json:"limit"`
+	Offset    int32       `db:"offset" json:"offset"`
 }
 
 func (q *Queries) ListVideosByChannel(ctx context.Context, arg ListVideosByChannelParams) ([]Video, error) {
-	rows, err := q.db.QueryContext(ctx, listVideosByChannel, arg.ChannelID, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, listVideosByChannel, arg.ChannelID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
@@ -221,7 +220,7 @@ func (q *Queries) ListVideosByChannel(ctx context.Context, arg ListVideosByChann
 			&i.OriginalUrl,
 			&i.HlsPlaylistUrl,
 			&i.Category,
-			pq.Array(&i.Tags),
+			&i.Tags,
 			&i.UploadedAt,
 			&i.PublishedAt,
 			&i.CreatedAt,
@@ -231,9 +230,6 @@ func (q *Queries) ListVideosByChannel(ctx context.Context, arg ListVideosByChann
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -246,14 +242,14 @@ UPDATE videos SET status = $2, hls_playlist_url = $3, thumbnail_url = $4, update
 `
 
 type UpdateVideoStatusParams struct {
-	ID             uuid.UUID      `db:"id" json:"id"`
-	Status         string         `db:"status" json:"status"`
-	HlsPlaylistUrl sql.NullString `db:"hls_playlist_url" json:"hls_playlist_url"`
-	ThumbnailUrl   sql.NullString `db:"thumbnail_url" json:"thumbnail_url"`
+	ID             uuid.UUID   `db:"id" json:"id"`
+	Status         string      `db:"status" json:"status"`
+	HlsPlaylistUrl pgtype.Text `db:"hls_playlist_url" json:"hls_playlist_url"`
+	ThumbnailUrl   pgtype.Text `db:"thumbnail_url" json:"thumbnail_url"`
 }
 
 func (q *Queries) UpdateVideoStatus(ctx context.Context, arg UpdateVideoStatusParams) (Video, error) {
-	row := q.db.QueryRowContext(ctx, updateVideoStatus,
+	row := q.db.QueryRow(ctx, updateVideoStatus,
 		arg.ID,
 		arg.Status,
 		arg.HlsPlaylistUrl,
@@ -274,7 +270,7 @@ func (q *Queries) UpdateVideoStatus(ctx context.Context, arg UpdateVideoStatusPa
 		&i.OriginalUrl,
 		&i.HlsPlaylistUrl,
 		&i.Category,
-		pq.Array(&i.Tags),
+		&i.Tags,
 		&i.UploadedAt,
 		&i.PublishedAt,
 		&i.CreatedAt,

@@ -11,11 +11,23 @@ import (
 )
 
 type Querier interface {
+	// ==================== ADMIN QUERIES ====================
+	AdminDeleteUser(ctx context.Context, arg AdminDeleteUserParams) error
+	AdminGetAllUsers(ctx context.Context, arg AdminGetAllUsersParams) ([]User, error)
+	AdminGetUserWithDeleted(ctx context.Context, id uuid.UUID) (User, error)
+	// Optional useful admin queries:
+	AdminUpdateUserRole(ctx context.Context, arg AdminUpdateUserRoleParams) (User, error)
+	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	CreateVideo(ctx context.Context, arg CreateVideoParams) (Video, error)
+	DeleteSession(ctx context.Context, tokenHash string) error
+	DeleteUser(ctx context.Context, arg DeleteUserParams) (User, error)
+	DeleteUserSessions(ctx context.Context, userID uuid.UUID) error
+	GetSessionWithUser(ctx context.Context, tokenHash string) (GetSessionWithUserRow, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (User, error)
 	GetUserByUsername(ctx context.Context, username string) (User, error)
+	GetUserRole(ctx context.Context, id uuid.UUID) (UserRole, error)
 	GetVideoByID(ctx context.Context, id uuid.UUID) (Video, error)
 	IncrementVideoDislikes(ctx context.Context, id uuid.UUID) (Video, error)
 	IncrementVideoLikes(ctx context.Context, id uuid.UUID) (Video, error)
