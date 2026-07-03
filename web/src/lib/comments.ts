@@ -7,4 +7,5 @@ export type Comment = {
   };
   created_at: string;
   parent_id: string | null;
+  likes_count: number;
 };

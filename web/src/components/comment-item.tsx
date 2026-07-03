@@ -16,6 +16,9 @@ function CommentRow({
   onDelete: (id: string) => void;
 }) {
   const [isDeleting, setIsDeleting] = useState(false);
+  const [likesCount, setLikesCount] = useState(comment.likes_count);
+  const [liked, setLiked] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
   const canDelete =
     comment.author.id === currentUserId || currentUserRole === "admin";
 
@@ -31,6 +34,20 @@ function CommentRow({
     onDelete(comment.id);
   }
 
+  async function handleLike() {
+    setIsLiking(true);
+    const res = await fetch(`/api/comments/${comment.id}/like`, {
+      method: "POST",
+    });
+    setIsLiking(false);
+    if (!res.ok) {
+      return;
+    }
+    const { liked: nowLiked }: { liked: boolean } = await res.json();
+    setLiked(nowLiked);
+    setLikesCount((current) => current + (nowLiked ? 1 : -1));
+  }
+
   return (
     <div className="flex items-start justify-between gap-4">
       <div>
@@ -38,6 +55,20 @@ function CommentRow({
         <p className="text-sm text-black/80 dark:text-white/80">
           {comment.content}
         </p>
+        {currentUserId && (
+          <button
+            type="button"
+            disabled={isLiking}
+            onClick={handleLike}
+            className={`mt-1 text-xs hover:underline disabled:opacity-50 ${
+              liked
+                ? "text-black dark:text-white"
+                : "text-black/60 dark:text-white/60"
+            }`}
+          >
+            Like{likesCount > 0 ? ` · ${likesCount}` : ""}
+          </button>
+        )}
       </div>
       <div className="flex shrink-0 items-center gap-3 text-xs">
         {currentUserId && currentUserId !== comment.author.id && (
