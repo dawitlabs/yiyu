@@ -149,6 +149,23 @@ func (h *VideoHandler) GetVideoByID(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, toVideoResponse(video))
 }
 
+// parseLimitOffset reads ?limit=&offset= query params with sane defaults and
+// bounds, shared across every paginated list endpoint.
+func parseLimitOffset(r *http.Request) (limit int32, offset int32) {
+	limit = 20
+	if v := r.URL.Query().Get("limit"); v != "" {
+		if parsed, err := strconv.Atoi(v); err == nil && parsed > 0 && parsed <= 100 {
+			limit = int32(parsed)
+		}
+	}
+	if v := r.URL.Query().Get("offset"); v != "" {
+		if parsed, err := strconv.Atoi(v); err == nil && parsed >= 0 {
+			offset = int32(parsed)
+		}
+	}
+	return limit, offset
+}
+
 func (h *VideoHandler) ListVideosByChannel(w http.ResponseWriter, r *http.Request) {
 	channel, err := h.repo.GetChannelByHandle(r.Context(), r.PathValue("handle"))
 	if err != nil {
@@ -156,18 +173,7 @@ func (h *VideoHandler) ListVideosByChannel(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	limit := int32(20)
-	if v := r.URL.Query().Get("limit"); v != "" {
-		if parsed, err := strconv.Atoi(v); err == nil && parsed > 0 && parsed <= 100 {
-			limit = int32(parsed)
-		}
-	}
-	offset := int32(0)
-	if v := r.URL.Query().Get("offset"); v != "" {
-		if parsed, err := strconv.Atoi(v); err == nil && parsed >= 0 {
-			offset = int32(parsed)
-		}
-	}
+	limit, offset := parseLimitOffset(r)
 
 	videos, err := h.repo.ListVideosByChannel(r.Context(), repository.ListVideosByChannelParams{
 		ChannelID: pgtype.UUID{Bytes: channel.ID, Valid: true},
@@ -176,6 +182,27 @@ func (h *VideoHandler) ListVideosByChannel(w http.ResponseWriter, r *http.Reques
 	})
 	if err != nil {
 		log.Printf("list videos by channel: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	resp := make([]videoResponse, len(videos))
+	for i, v := range videos {
+		resp[i] = toVideoResponse(v)
+	}
+
+	writeJSON(w, http.StatusOK, resp)
+}
+
+func (h *VideoHandler) ListPublicVideos(w http.ResponseWriter, r *http.Request) {
+	limit, offset := parseLimitOffset(r)
+
+	videos, err := h.repo.ListPublicVideos(r.Context(), repository.ListPublicVideosParams{
+		Limit:  limit,
+		Offset: offset,
+	})
+	if err != nil {
+		log.Printf("list public videos: %v", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 
 	"github.com/dawitlabs/yiyu/internal/adapters/repository"
@@ -41,19 +40,7 @@ func toAdminUserResponse(u repository.User) adminUserResponse {
 }
 
 func (h *AdminHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
-	limit := int32(20)
-	if v := r.URL.Query().Get("limit"); v != "" {
-		if parsed, err := strconv.Atoi(v); err == nil && parsed > 0 && parsed <= 100 {
-			limit = int32(parsed)
-		}
-	}
-
-	offset := int32(0)
-	if v := r.URL.Query().Get("offset"); v != "" {
-		if parsed, err := strconv.Atoi(v); err == nil && parsed >= 0 {
-			offset = int32(parsed)
-		}
-	}
+	limit, offset := parseLimitOffset(r)
 
 	users, err := h.repo.AdminGetAllUsers(r.Context(), repository.AdminGetAllUsersParams{
 		Limit:  limit,

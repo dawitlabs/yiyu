@@ -21,4 +21,10 @@ UPDATE videos SET likes_count = likes_count + 1 WHERE id = $1 RETURNING *;
 -- name: IncrementVideoDislikes :one
 UPDATE videos SET dislikes_count = dislikes_count + 1 WHERE id = $1 RETURNING *;
 
+-- name: ListPublicVideos :many
+SELECT * FROM videos
+WHERE visibility = 'public' AND status = 'ready'
+ORDER BY uploaded_at DESC
+LIMIT $1 OFFSET $2;
+
 

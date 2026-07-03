@@ -48,6 +48,7 @@ type VideoRepository interface {
 	IncrementVideoViews(ctx context.Context, id uuid.UUID) (repository.Video, error)
 	IncrementVideoLikes(ctx context.Context, id uuid.UUID) (repository.Video, error)
 	IncrementVideoDislikes(ctx context.Context, id uuid.UUID) (repository.Video, error)
+	ListPublicVideos(ctx context.Context, arg repository.ListPublicVideosParams) ([]repository.Video, error)
 }
 
 type ChannelRepository interface {

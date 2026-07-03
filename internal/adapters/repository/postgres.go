@@ -100,6 +100,10 @@ func (r *PostgresRepository) IncrementVideoDislikes(ctx context.Context, id uuid
 	return r.queries.IncrementVideoDislikes(ctx, id)
 }
 
+func (r *PostgresRepository) ListPublicVideos(ctx context.Context, arg ListPublicVideosParams) ([]Video, error) {
+	return r.queries.ListPublicVideos(ctx, arg)
+}
+
 func (r *PostgresRepository) CreateChannel(ctx context.Context, arg CreateChannelParams) (Channel, error) {
 	return r.queries.CreateChannel(ctx, arg)
 }
