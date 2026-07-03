@@ -6,4 +6,5 @@ export type Comment = {
     username: string;
   };
   created_at: string;
+  parent_id: string | null;
 };

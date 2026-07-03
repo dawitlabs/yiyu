@@ -1,7 +1,7 @@
 "use client";
 
 import { type SubmitEvent, useState } from "react";
-import { ReportButton } from "@/components/report-button";
+import { CommentItem } from "@/components/comment-item";
 import type { Comment } from "@/lib/comments";
 
 export function CommentSection({
@@ -18,7 +18,6 @@ export function CommentSection({
   const [comments, setComments] = useState(initialComments);
   const [content, setContent] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   async function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -43,13 +42,7 @@ export function CommentSection({
     setContent("");
   }
 
-  async function handleDelete(id: string) {
-    setPendingDeleteId(id);
-    const res = await fetch(`/api/comments/${id}`, { method: "DELETE" });
-    setPendingDeleteId(null);
-    if (!res.ok) {
-      return;
-    }
+  function handleDelete(id: string) {
     setComments((current) => current.filter((c) => c.id !== id));
   }
 
@@ -81,43 +74,16 @@ export function CommentSection({
       )}
 
       <div className="flex flex-col gap-4">
-        {comments.map((comment) => {
-          const canDelete =
-            comment.author.id === currentUserId || currentUserRole === "admin";
-
-          return (
-            <div
-              key={comment.id}
-              className="flex items-start justify-between gap-4"
-            >
-              <div>
-                <p className="text-sm font-medium">{comment.author.username}</p>
-                <p className="text-sm text-black/80 dark:text-white/80">
-                  {comment.content}
-                </p>
-              </div>
-              <div className="flex shrink-0 items-center gap-3 text-xs">
-                {currentUserId && currentUserId !== comment.author.id && (
-                  <ReportButton
-                    targetType="comments"
-                    targetId={comment.id}
-                    className="text-black/60 hover:underline disabled:opacity-50 dark:text-white/60"
-                  />
-                )}
-                {canDelete && (
-                  <button
-                    type="button"
-                    disabled={pendingDeleteId === comment.id}
-                    onClick={() => handleDelete(comment.id)}
-                    className="text-red-600 hover:underline disabled:opacity-50 dark:text-red-400"
-                  >
-                    Delete
-                  </button>
-                )}
-              </div>
-            </div>
-          );
-        })}
+        {comments.map((comment) => (
+          <CommentItem
+            key={comment.id}
+            videoId={videoId}
+            comment={comment}
+            currentUserId={currentUserId}
+            currentUserRole={currentUserRole}
+            onDelete={handleDelete}
+          />
+        ))}
       </div>
     </div>
   );
