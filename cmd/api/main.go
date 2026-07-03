@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 
@@ -21,6 +22,8 @@ func getEnv(key, fallback string) string {
 }
 
 func main() {
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+
 	ctx := context.Background()
 
 	dsn := os.Getenv("DATABASE_URL")
@@ -73,9 +76,21 @@ func main() {
 		return requireAuth(httpapi.RequireAdmin(h))
 	}
 
+	// Stricter budget than the general limiter — signup/login are the
+	// classic brute-force and spam-account targets.
+	authRateLimit := httpapi.RateLimit(10, 5)
+
 	mux := http.NewServeMux()
-	mux.HandleFunc("POST /signup", auth.Signup)
-	mux.HandleFunc("POST /login", auth.Login)
+	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
+		if err := pool.Ping(r.Context()); err != nil {
+			http.Error(w, "database unreachable", http.StatusServiceUnavailable)
+			return
+		}
+		w.Write([]byte("ok"))
+	})
+
+	mux.Handle("POST /signup", authRateLimit(http.HandlerFunc(auth.Signup)))
+	mux.Handle("POST /login", authRateLimit(http.HandlerFunc(auth.Login)))
 	mux.HandleFunc("POST /logout", auth.Logout)
 	mux.Handle("GET /me", requireAuth(http.HandlerFunc(auth.Me)))
 
@@ -133,6 +148,10 @@ func main() {
 	mux.Handle("GET /notifications/unread-count", requireAuth(http.HandlerFunc(notification.UnreadCount)))
 	mux.Handle("POST /notifications/{id}/read", requireAuth(http.HandlerFunc(notification.MarkRead)))
 
+	// General per-IP budget across every route — the stricter auth limiter
+	// above still applies underneath this on /signup and /login.
+	generalRateLimit := httpapi.RateLimit(120, 30)
+
 	log.Println("listening on :8082")
-	log.Fatal(http.ListenAndServe(":8082", mux))
+	log.Fatal(http.ListenAndServe(":8082", generalRateLimit(mux)))
 }
