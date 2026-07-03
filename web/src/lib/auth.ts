@@ -6,6 +6,7 @@ export type User = {
   id: string;
   username: string;
   email: string;
+  role: "user" | "admin" | "moderator";
 };
 
 export async function getCurrentUser(): Promise<User | null> {

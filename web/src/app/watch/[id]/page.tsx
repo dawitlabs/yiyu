@@ -1,8 +1,10 @@
 import { notFound } from "next/navigation";
+import { CommentSection } from "@/components/comment-section";
 import { ReactionButtons } from "@/components/reaction-buttons";
 import { ViewRecorder } from "@/components/view-recorder";
 import { serverFetch } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
+import type { Comment } from "@/lib/comments";
 import type { Video } from "@/lib/videos";
 
 export default async function WatchPage({
@@ -12,8 +14,9 @@ export default async function WatchPage({
 }) {
   const { id } = await params;
 
-  const [res, user] = await Promise.all([
+  const [res, commentsRes, user] = await Promise.all([
     serverFetch(`/videos/${id}`),
+    serverFetch(`/videos/${id}/comments`),
     getCurrentUser(),
   ]);
   if (!res.ok) {
@@ -21,6 +24,7 @@ export default async function WatchPage({
   }
 
   const video: Video = await res.json();
+  const comments: Comment[] = commentsRes.ok ? await commentsRes.json() : [];
 
   let initialReaction: "like" | "dislike" | null = null;
   if (user) {
@@ -60,6 +64,13 @@ export default async function WatchPage({
           {video.description}
         </p>
       )}
+
+      <CommentSection
+        videoId={video.id}
+        initialComments={comments}
+        currentUserId={user?.id ?? null}
+        currentUserRole={user?.role ?? null}
+      />
     </div>
   );
 }
