@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { VideoGrid } from "@/components/video-grid";
 import { serverFetch } from "@/lib/api";
 import type { Channel } from "@/lib/channels";
 import { getMyChannel } from "@/lib/my-channel";
@@ -53,34 +54,7 @@ export default async function ChannelPage({
       </div>
 
       <div className="mt-8">
-        {videos.length === 0 ? (
-          <p className="text-black/60 dark:text-white/60">No videos yet.</p>
-        ) : (
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-            {videos.map((video) => (
-              <Link
-                key={video.id}
-                href={`/watch/${video.id}`}
-                className="flex flex-col gap-2"
-              >
-                <div className="aspect-video overflow-hidden rounded-md bg-black/5 dark:bg-white/10">
-                  {video.thumbnail_url && (
-                    // biome-ignore lint/performance/noImgElement: thumbnail_url is an arbitrary external host, next/image's remotePatterns can't allowlist unknown hosts
-                    <img
-                      src={video.thumbnail_url}
-                      alt={video.title}
-                      className="h-full w-full object-cover"
-                    />
-                  )}
-                </div>
-                <p className="text-sm font-medium">{video.title}</p>
-                <p className="text-xs text-black/60 dark:text-white/60">
-                  {video.views_count} views
-                </p>
-              </Link>
-            ))}
-          </div>
-        )}
+        <VideoGrid videos={videos} />
       </div>
     </div>
   );
