@@ -1,7 +1,9 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"strconv"
@@ -10,14 +12,17 @@ import (
 	"github.com/dawitlabs/yiyu/internal/adapters/repository"
 	"github.com/dawitlabs/yiyu/internal/ports"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 // videoRepository is the slice of ports this handler needs — channel lookups
-// to resolve a handle/owner, plus the video methods themselves.
+// to resolve a handle/owner, the video methods themselves, and WithTx for
+// like/dislike, which touches two tables atomically.
 type videoRepository interface {
 	ports.VideoRepository
 	ports.ChannelRepository
+	WithTx(ctx context.Context, fn func(repository.Querier) error) error
 }
 
 type VideoHandler struct {
@@ -232,4 +237,96 @@ func (h *VideoHandler) RecordView(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, toVideoResponse(video))
+}
+
+// react toggles the caller's like/dislike on a video. Clicking the same
+// reaction again removes it; clicking the opposite one switches it. Every
+// transition adjusts both counters in one transaction, alongside the
+// video_interactions row, so likes_count/dislikes_count can never drift out
+// of sync with what's actually recorded per user.
+func (h *VideoHandler) react(w http.ResponseWriter, r *http.Request, reactionType string) {
+	videoID, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "invalid video id", http.StatusBadRequest)
+		return
+	}
+
+	user, _ := UserFromContext(r.Context())
+	userPg := pgtype.UUID{Bytes: user.ID, Valid: true}
+	videoPg := pgtype.UUID{Bytes: videoID, Valid: true}
+
+	var video repository.Video
+	err = h.repo.WithTx(r.Context(), func(q repository.Querier) error {
+		existing, getErr := q.GetVideoInteraction(r.Context(), repository.GetVideoInteractionParams{
+			VideoID: videoPg,
+			UserID:  userPg,
+		})
+
+		var likesDelta, dislikesDelta int64
+		switch {
+		case errors.Is(getErr, pgx.ErrNoRows):
+			if _, err := q.CreateVideoInteraction(r.Context(), repository.CreateVideoInteractionParams{
+				VideoID: videoPg,
+				UserID:  userPg,
+				Type:    reactionType,
+			}); err != nil {
+				return err
+			}
+			if reactionType == "like" {
+				likesDelta = 1
+			} else {
+				dislikesDelta = 1
+			}
+		case getErr != nil:
+			return getErr
+		case existing.Type == reactionType:
+			if err := q.DeleteVideoInteraction(r.Context(), repository.DeleteVideoInteractionParams{
+				VideoID: videoPg,
+				UserID:  userPg,
+			}); err != nil {
+				return err
+			}
+			if reactionType == "like" {
+				likesDelta = -1
+			} else {
+				dislikesDelta = -1
+			}
+		default:
+			if _, err := q.UpdateVideoInteractionType(r.Context(), repository.UpdateVideoInteractionTypeParams{
+				VideoID: videoPg,
+				UserID:  userPg,
+				Type:    reactionType,
+			}); err != nil {
+				return err
+			}
+			if reactionType == "like" {
+				likesDelta, dislikesDelta = 1, -1
+			} else {
+				likesDelta, dislikesDelta = -1, 1
+			}
+		}
+
+		var adjustErr error
+		video, adjustErr = q.AdjustVideoReactionCounts(r.Context(), repository.AdjustVideoReactionCountsParams{
+			ID:            videoID,
+			LikesDelta:    likesDelta,
+			DislikesDelta: dislikesDelta,
+		})
+		return adjustErr
+	})
+	if err != nil {
+		log.Printf("react to video: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toVideoResponse(video))
+}
+
+func (h *VideoHandler) LikeVideo(w http.ResponseWriter, r *http.Request) {
+	h.react(w, r, "like")
+}
+
+func (h *VideoHandler) DislikeVideo(w http.ResponseWriter, r *http.Request) {
+	h.react(w, r, "dislike")
 }

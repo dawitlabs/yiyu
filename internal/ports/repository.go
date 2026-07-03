@@ -19,6 +19,11 @@ type Repository interface {
 	// WatchlistRepository
 	// HistoryRepository
 	// RecommendationRepository
+
+	// WithTx runs fn inside a single transaction, giving it access to every
+	// query method (repository.Querier is the full sqlc-generated set) —
+	// for operations that need more than one statement to stay atomic.
+	WithTx(ctx context.Context, fn func(repository.Querier) error) error
 }
 
 type UserRepository interface {

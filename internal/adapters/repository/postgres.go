@@ -20,6 +20,22 @@ func NewPostgresRepository(db *pgxpool.Pool) *PostgresRepository {
 	}
 }
 
+// WithTx runs fn inside a single Postgres transaction, committing on success
+// and rolling back on any error (including a panic, via the deferred
+// Rollback — a no-op once Commit has already succeeded).
+func (r *PostgresRepository) WithTx(ctx context.Context, fn func(Querier) error) error {
+	tx, err := r.db.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	if err := fn(r.queries.WithTx(tx)); err != nil {
+		return err
+	}
+	return tx.Commit(ctx)
+}
+
 func (r *PostgresRepository) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
 	return r.queries.CreateUser(ctx, arg)
 }
