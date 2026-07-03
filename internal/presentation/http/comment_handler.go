@@ -1,7 +1,9 @@
 package httpapi
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 	"time"
@@ -9,12 +11,14 @@ import (
 	"github.com/dawitlabs/yiyu/internal/adapters/repository"
 	"github.com/dawitlabs/yiyu/internal/ports"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type commentRepository interface {
 	ports.CommentRepository
 	ports.ReportRepository
+	WithTx(ctx context.Context, fn func(repository.Querier) error) error
 }
 
 type CommentHandler struct {
@@ -31,11 +35,12 @@ type commentAuthorResponse struct {
 }
 
 type commentResponse struct {
-	ID        string                `json:"id"`
-	Content   string                `json:"content"`
-	Author    commentAuthorResponse `json:"author"`
-	CreatedAt time.Time             `json:"created_at"`
-	ParentID  *string               `json:"parent_id"`
+	ID         string                `json:"id"`
+	Content    string                `json:"content"`
+	Author     commentAuthorResponse `json:"author"`
+	CreatedAt  time.Time             `json:"created_at"`
+	ParentID   *string               `json:"parent_id"`
+	LikesCount int64                 `json:"likes_count"`
 }
 
 func toCommentResponse(c repository.Comment, author repository.User) commentResponse {
@@ -46,7 +51,8 @@ func toCommentResponse(c repository.Comment, author repository.User) commentResp
 			ID:       author.ID.String(),
 			Username: author.Username,
 		},
-		CreatedAt: c.CreatedAt.Time,
+		CreatedAt:  c.CreatedAt.Time,
+		LikesCount: c.LikesCount.Int64,
 	}
 	if c.ParentID.Valid {
 		id := uuid.UUID(c.ParentID.Bytes).String()
@@ -167,6 +173,93 @@ func (h *CommentHandler) ListReplies(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, resp)
+}
+
+// LikeComment toggles the caller's like on a comment — comments only have a
+// single reaction type (unlike videos' like/dislike), so one endpoint that
+// inserts-or-deletes the like row and adjusts likes_count is enough.
+func (h *CommentHandler) LikeComment(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "invalid comment id", http.StatusBadRequest)
+		return
+	}
+
+	if _, err := h.repo.GetCommentByID(r.Context(), id); err != nil {
+		http.Error(w, "comment not found", http.StatusNotFound)
+		return
+	}
+
+	user, _ := UserFromContext(r.Context())
+
+	var liked bool
+	err = h.repo.WithTx(r.Context(), func(q repository.Querier) error {
+		_, getErr := q.GetCommentLike(r.Context(), repository.GetCommentLikeParams{
+			CommentID: id,
+			UserID:    user.ID,
+		})
+		switch {
+		case errors.Is(getErr, pgx.ErrNoRows):
+			if err := q.CreateCommentLike(r.Context(), repository.CreateCommentLikeParams{
+				CommentID: id,
+				UserID:    user.ID,
+			}); err != nil {
+				return err
+			}
+			if _, err := q.IncrementCommentLikes(r.Context(), id); err != nil {
+				return err
+			}
+			liked = true
+			return nil
+		case getErr != nil:
+			return getErr
+		default:
+			if err := q.DeleteCommentLike(r.Context(), repository.DeleteCommentLikeParams{
+				CommentID: id,
+				UserID:    user.ID,
+			}); err != nil {
+				return err
+			}
+			if _, err := q.DecrementCommentLikes(r.Context(), id); err != nil {
+				return err
+			}
+			liked = false
+			return nil
+		}
+	})
+	if err != nil {
+		log.Printf("like comment: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]bool{"liked": liked})
+}
+
+func (h *CommentHandler) GetMyCommentLike(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "invalid comment id", http.StatusBadRequest)
+		return
+	}
+
+	user, _ := UserFromContext(r.Context())
+
+	_, err = h.repo.GetCommentLike(r.Context(), repository.GetCommentLikeParams{
+		CommentID: id,
+		UserID:    user.ID,
+	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		writeJSON(w, http.StatusOK, map[string]bool{"liked": false})
+		return
+	}
+	if err != nil {
+		log.Printf("get comment like: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, map[string]bool{"liked": true})
 }
 
 // DeleteComment allows either the comment's author or an admin to remove it

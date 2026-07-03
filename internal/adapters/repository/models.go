@@ -80,6 +80,12 @@ type Comment struct {
 	UpdatedAt  pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 }
 
+type CommentLike struct {
+	CommentID uuid.UUID          `db:"comment_id" json:"comment_id"`
+	UserID    uuid.UUID          `db:"user_id" json:"user_id"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+}
+
 type Playlist struct {
 	ID          uuid.UUID          `db:"id" json:"id"`
 	ChannelID   pgtype.UUID        `db:"channel_id" json:"channel_id"`

@@ -47,6 +47,41 @@ func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (C
 	return i, err
 }
 
+const createCommentLike = `-- name: CreateCommentLike :exec
+INSERT INTO comment_likes (comment_id, user_id) VALUES ($1, $2)
+`
+
+type CreateCommentLikeParams struct {
+	CommentID uuid.UUID `db:"comment_id" json:"comment_id"`
+	UserID    uuid.UUID `db:"user_id" json:"user_id"`
+}
+
+func (q *Queries) CreateCommentLike(ctx context.Context, arg CreateCommentLikeParams) error {
+	_, err := q.db.Exec(ctx, createCommentLike, arg.CommentID, arg.UserID)
+	return err
+}
+
+const decrementCommentLikes = `-- name: DecrementCommentLikes :one
+UPDATE comments SET likes_count = likes_count - 1 WHERE id = $1 RETURNING id, video_id, user_id, parent_id, content, likes_count, is_deleted, created_at, updated_at
+`
+
+func (q *Queries) DecrementCommentLikes(ctx context.Context, id uuid.UUID) (Comment, error) {
+	row := q.db.QueryRow(ctx, decrementCommentLikes, id)
+	var i Comment
+	err := row.Scan(
+		&i.ID,
+		&i.VideoID,
+		&i.UserID,
+		&i.ParentID,
+		&i.Content,
+		&i.LikesCount,
+		&i.IsDeleted,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
 const deleteComment = `-- name: DeleteComment :exec
 UPDATE comments SET is_deleted = true, updated_at = NOW() WHERE id = $1
 `
@@ -56,12 +91,63 @@ func (q *Queries) DeleteComment(ctx context.Context, id uuid.UUID) error {
 	return err
 }
 
+const deleteCommentLike = `-- name: DeleteCommentLike :exec
+DELETE FROM comment_likes WHERE comment_id = $1 AND user_id = $2
+`
+
+type DeleteCommentLikeParams struct {
+	CommentID uuid.UUID `db:"comment_id" json:"comment_id"`
+	UserID    uuid.UUID `db:"user_id" json:"user_id"`
+}
+
+func (q *Queries) DeleteCommentLike(ctx context.Context, arg DeleteCommentLikeParams) error {
+	_, err := q.db.Exec(ctx, deleteCommentLike, arg.CommentID, arg.UserID)
+	return err
+}
+
 const getCommentByID = `-- name: GetCommentByID :one
 SELECT id, video_id, user_id, parent_id, content, likes_count, is_deleted, created_at, updated_at FROM comments WHERE id = $1
 `
 
 func (q *Queries) GetCommentByID(ctx context.Context, id uuid.UUID) (Comment, error) {
 	row := q.db.QueryRow(ctx, getCommentByID, id)
+	var i Comment
+	err := row.Scan(
+		&i.ID,
+		&i.VideoID,
+		&i.UserID,
+		&i.ParentID,
+		&i.Content,
+		&i.LikesCount,
+		&i.IsDeleted,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getCommentLike = `-- name: GetCommentLike :one
+SELECT comment_id, user_id, created_at FROM comment_likes WHERE comment_id = $1 AND user_id = $2
+`
+
+type GetCommentLikeParams struct {
+	CommentID uuid.UUID `db:"comment_id" json:"comment_id"`
+	UserID    uuid.UUID `db:"user_id" json:"user_id"`
+}
+
+func (q *Queries) GetCommentLike(ctx context.Context, arg GetCommentLikeParams) (CommentLike, error) {
+	row := q.db.QueryRow(ctx, getCommentLike, arg.CommentID, arg.UserID)
+	var i CommentLike
+	err := row.Scan(&i.CommentID, &i.UserID, &i.CreatedAt)
+	return i, err
+}
+
+const incrementCommentLikes = `-- name: IncrementCommentLikes :one
+UPDATE comments SET likes_count = likes_count + 1 WHERE id = $1 RETURNING id, video_id, user_id, parent_id, content, likes_count, is_deleted, created_at, updated_at
+`
+
+func (q *Queries) IncrementCommentLikes(ctx context.Context, id uuid.UUID) (Comment, error) {
+	row := q.db.QueryRow(ctx, incrementCommentLikes, id)
 	var i Comment
 	err := row.Scan(
 		&i.ID,

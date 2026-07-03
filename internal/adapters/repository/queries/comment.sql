@@ -26,3 +26,18 @@ LIMIT $2 OFFSET $3;
 
 -- name: DeleteComment :exec
 UPDATE comments SET is_deleted = true, updated_at = NOW() WHERE id = $1;
+
+-- name: GetCommentLike :one
+SELECT * FROM comment_likes WHERE comment_id = $1 AND user_id = $2;
+
+-- name: CreateCommentLike :exec
+INSERT INTO comment_likes (comment_id, user_id) VALUES ($1, $2);
+
+-- name: DeleteCommentLike :exec
+DELETE FROM comment_likes WHERE comment_id = $1 AND user_id = $2;
+
+-- name: IncrementCommentLikes :one
+UPDATE comments SET likes_count = likes_count + 1 WHERE id = $1 RETURNING *;
+
+-- name: DecrementCommentLikes :one
+UPDATE comments SET likes_count = likes_count - 1 WHERE id = $1 RETURNING *;

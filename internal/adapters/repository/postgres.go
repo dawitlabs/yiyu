@@ -184,6 +184,10 @@ func (r *PostgresRepository) DeleteComment(ctx context.Context, id uuid.UUID) er
 	return r.queries.DeleteComment(ctx, id)
 }
 
+func (r *PostgresRepository) GetCommentLike(ctx context.Context, arg GetCommentLikeParams) (CommentLike, error) {
+	return r.queries.GetCommentLike(ctx, arg)
+}
+
 func (r *PostgresRepository) GetSubscription(ctx context.Context, arg GetSubscriptionParams) (Subscription, error) {
 	return r.queries.GetSubscription(ctx, arg)
 }

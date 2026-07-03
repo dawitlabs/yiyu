@@ -107,6 +107,8 @@ func main() {
 	mux.HandleFunc("GET /comments/{id}/replies", comment.ListReplies)
 	mux.Handle("DELETE /comments/{id}", requireAuth(http.HandlerFunc(comment.DeleteComment)))
 	mux.Handle("POST /comments/{id}/report", requireAuth(http.HandlerFunc(comment.ReportComment)))
+	mux.Handle("POST /comments/{id}/like", requireAuth(http.HandlerFunc(comment.LikeComment)))
+	mux.Handle("GET /comments/{id}/like", requireAuth(http.HandlerFunc(comment.GetMyCommentLike)))
 
 	mux.Handle("POST /uploads/presign", requireAuth(http.HandlerFunc(upload.PresignUpload)))
 

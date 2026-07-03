@@ -76,6 +76,7 @@ type CommentRepository interface {
 	ListCommentsByVideo(ctx context.Context, arg repository.ListCommentsByVideoParams) ([]repository.ListCommentsByVideoRow, error)
 	ListCommentReplies(ctx context.Context, arg repository.ListCommentRepliesParams) ([]repository.ListCommentRepliesRow, error)
 	DeleteComment(ctx context.Context, id uuid.UUID) error
+	GetCommentLike(ctx context.Context, arg repository.GetCommentLikeParams) (repository.CommentLike, error)
 }
 
 type SubscriptionRepository interface {

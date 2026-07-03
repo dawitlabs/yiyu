@@ -29,6 +29,7 @@ type Querier interface {
 	CompleteVideoProcessing(ctx context.Context, arg CompleteVideoProcessingParams) (Video, error)
 	CreateChannel(ctx context.Context, arg CreateChannelParams) (Channel, error)
 	CreateComment(ctx context.Context, arg CreateCommentParams) (Comment, error)
+	CreateCommentLike(ctx context.Context, arg CreateCommentLikeParams) error
 	CreatePlaylist(ctx context.Context, arg CreatePlaylistParams) (Playlist, error)
 	CreateReport(ctx context.Context, arg CreateReportParams) (Report, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
@@ -36,7 +37,9 @@ type Querier interface {
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	CreateVideo(ctx context.Context, arg CreateVideoParams) (Video, error)
 	CreateVideoInteraction(ctx context.Context, arg CreateVideoInteractionParams) (VideoInteraction, error)
+	DecrementCommentLikes(ctx context.Context, id uuid.UUID) (Comment, error)
 	DeleteComment(ctx context.Context, id uuid.UUID) error
+	DeleteCommentLike(ctx context.Context, arg DeleteCommentLikeParams) error
 	DeletePlaylist(ctx context.Context, id uuid.UUID) error
 	DeleteSession(ctx context.Context, tokenHash string) error
 	DeleteSubscription(ctx context.Context, arg DeleteSubscriptionParams) error
@@ -48,6 +51,7 @@ type Querier interface {
 	GetChannelByID(ctx context.Context, id uuid.UUID) (Channel, error)
 	GetChannelByUserID(ctx context.Context, userID pgtype.UUID) (Channel, error)
 	GetCommentByID(ctx context.Context, id uuid.UUID) (Comment, error)
+	GetCommentLike(ctx context.Context, arg GetCommentLikeParams) (CommentLike, error)
 	GetPlaylistByID(ctx context.Context, id uuid.UUID) (Playlist, error)
 	GetSessionWithUser(ctx context.Context, tokenHash string) (GetSessionWithUserRow, error)
 	GetSubscription(ctx context.Context, arg GetSubscriptionParams) (Subscription, error)
@@ -57,6 +61,7 @@ type Querier interface {
 	GetUserRole(ctx context.Context, id uuid.UUID) (UserRole, error)
 	GetVideoByID(ctx context.Context, id uuid.UUID) (Video, error)
 	GetVideoInteraction(ctx context.Context, arg GetVideoInteractionParams) (VideoInteraction, error)
+	IncrementCommentLikes(ctx context.Context, id uuid.UUID) (Comment, error)
 	IncrementVideoDislikes(ctx context.Context, id uuid.UUID) (Video, error)
 	IncrementVideoLikes(ctx context.Context, id uuid.UUID) (Video, error)
 	IncrementVideoViews(ctx context.Context, id uuid.UUID) (Video, error)
