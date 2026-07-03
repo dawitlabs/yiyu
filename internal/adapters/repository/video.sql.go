@@ -13,18 +13,22 @@ import (
 )
 
 const createVideo = `-- name: CreateVideo :one
-INSERT INTO videos (channel_id, title, description , duration, status, visibility, category, tags) VALUES ($1,$2, $3, $4, $5, $6, $7, $8) RETURNING id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration
+INSERT INTO videos (channel_id, title, description, duration, status, visibility, category, tags, original_url, thumbnail_url)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+RETURNING id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration
 `
 
 type CreateVideoParams struct {
-	ChannelID   pgtype.UUID `db:"channel_id" json:"channel_id"`
-	Title       string      `db:"title" json:"title"`
-	Description pgtype.Text `db:"description" json:"description"`
-	Duration    pgtype.Int4 `db:"duration" json:"duration"`
-	Status      string      `db:"status" json:"status"`
-	Visibility  string      `db:"visibility" json:"visibility"`
-	Category    pgtype.Text `db:"category" json:"category"`
-	Tags        []string    `db:"tags" json:"tags"`
+	ChannelID    pgtype.UUID `db:"channel_id" json:"channel_id"`
+	Title        string      `db:"title" json:"title"`
+	Description  pgtype.Text `db:"description" json:"description"`
+	Duration     pgtype.Int4 `db:"duration" json:"duration"`
+	Status       string      `db:"status" json:"status"`
+	Visibility   string      `db:"visibility" json:"visibility"`
+	Category     pgtype.Text `db:"category" json:"category"`
+	Tags         []string    `db:"tags" json:"tags"`
+	OriginalUrl  pgtype.Text `db:"original_url" json:"original_url"`
+	ThumbnailUrl pgtype.Text `db:"thumbnail_url" json:"thumbnail_url"`
 }
 
 func (q *Queries) CreateVideo(ctx context.Context, arg CreateVideoParams) (Video, error) {
@@ -37,6 +41,8 @@ func (q *Queries) CreateVideo(ctx context.Context, arg CreateVideoParams) (Video
 		arg.Visibility,
 		arg.Category,
 		arg.Tags,
+		arg.OriginalUrl,
+		arg.ThumbnailUrl,
 	)
 	var i Video
 	err := row.Scan(

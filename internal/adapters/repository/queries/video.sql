@@ -1,5 +1,7 @@
 -- name: CreateVideo :one
-INSERT INTO videos (channel_id, title, description , duration, status, visibility, category, tags) VALUES ($1,$2, $3, $4, $5, $6, $7, $8) RETURNING *;
+INSERT INTO videos (channel_id, title, description, duration, status, visibility, category, tags, original_url, thumbnail_url)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+RETURNING *;
 
 -- name: GetVideoByID :one
 SELECT * FROM videos WHERE id = $1;

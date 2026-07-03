@@ -39,6 +39,7 @@ func main() {
 	auth := httpapi.NewAuthHandler(repo)
 	admin := httpapi.NewAdminHandler(repo)
 	channel := httpapi.NewChannelHandler(repo)
+	video := httpapi.NewVideoHandler(repo)
 
 	requireAuth := httpapi.RequireAuth(repo)
 	requireAdmin := func(h http.Handler) http.Handler {
@@ -58,6 +59,11 @@ func main() {
 	mux.Handle("POST /channels", requireAuth(http.HandlerFunc(channel.CreateChannel)))
 	mux.HandleFunc("GET /channels/{handle}", channel.GetChannelByHandle)
 	mux.Handle("PATCH /channels/{id}", requireAuth(http.HandlerFunc(channel.UpdateChannel)))
+
+	mux.Handle("POST /videos", requireAuth(http.HandlerFunc(video.CreateVideo)))
+	mux.HandleFunc("GET /videos/{id}", video.GetVideoByID)
+	mux.HandleFunc("POST /videos/{id}/view", video.RecordView)
+	mux.HandleFunc("GET /channels/{handle}/videos", video.ListVideosByChannel)
 
 	log.Println("listening on :8082")
 	log.Fatal(http.ListenAndServe(":8082", mux))
