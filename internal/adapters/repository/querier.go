@@ -16,8 +16,10 @@ type Querier interface {
 	AdjustVideoReactionCounts(ctx context.Context, arg AdjustVideoReactionCountsParams) (Video, error)
 	// ==================== ADMIN QUERIES ====================
 	AdminDeleteUser(ctx context.Context, arg AdminDeleteUserParams) error
+	AdminDeleteVideo(ctx context.Context, id uuid.UUID) error
 	AdminGetAllUsers(ctx context.Context, arg AdminGetAllUsersParams) ([]User, error)
 	AdminGetUserWithDeleted(ctx context.Context, id uuid.UUID) (User, error)
+	AdminListVideos(ctx context.Context, arg AdminListVideosParams) ([]Video, error)
 	// Optional useful admin queries:
 	AdminUpdateUserRole(ctx context.Context, arg AdminUpdateUserRoleParams) (User, error)
 	CreateChannel(ctx context.Context, arg CreateChannelParams) (Channel, error)

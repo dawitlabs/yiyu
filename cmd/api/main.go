@@ -78,6 +78,8 @@ func main() {
 	mux.Handle("GET /admin/users", requireAdmin(http.HandlerFunc(admin.ListUsers)))
 	mux.Handle("DELETE /admin/users/{id}", requireAdmin(http.HandlerFunc(admin.DeleteUser)))
 	mux.Handle("PATCH /admin/users/{id}/role", requireAdmin(http.HandlerFunc(admin.UpdateUserRole)))
+	mux.Handle("GET /admin/videos", requireAdmin(http.HandlerFunc(admin.ListVideos)))
+	mux.Handle("DELETE /admin/videos/{id}", requireAdmin(http.HandlerFunc(admin.DeleteVideo)))
 
 	mux.Handle("POST /channels", requireAuth(http.HandlerFunc(channel.CreateChannel)))
 	mux.Handle("GET /channels/me", requireAuth(http.HandlerFunc(channel.GetMyChannel)))

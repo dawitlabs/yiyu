@@ -124,6 +124,14 @@ func (r *PostgresRepository) SearchVideos(ctx context.Context, arg SearchVideosP
 	return r.queries.SearchVideos(ctx, arg)
 }
 
+func (r *PostgresRepository) AdminListVideos(ctx context.Context, arg AdminListVideosParams) ([]Video, error) {
+	return r.queries.AdminListVideos(ctx, arg)
+}
+
+func (r *PostgresRepository) AdminDeleteVideo(ctx context.Context, id uuid.UUID) error {
+	return r.queries.AdminDeleteVideo(ctx, id)
+}
+
 func (r *PostgresRepository) GetVideoInteraction(ctx context.Context, arg GetVideoInteractionParams) (VideoInteraction, error) {
 	return r.queries.GetVideoInteraction(ctx, arg)
 }

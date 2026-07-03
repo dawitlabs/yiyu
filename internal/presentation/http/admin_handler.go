@@ -7,15 +7,21 @@ import (
 	"time"
 
 	"github.com/dawitlabs/yiyu/internal/adapters/repository"
+	"github.com/dawitlabs/yiyu/internal/ports"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type AdminHandler struct {
-	repo authRepository
+type adminRepository interface {
+	authRepository
+	ports.VideoRepository
 }
 
-func NewAdminHandler(repo authRepository) *AdminHandler {
+type AdminHandler struct {
+	repo adminRepository
+}
+
+func NewAdminHandler(repo adminRepository) *AdminHandler {
 	return &AdminHandler{repo: repo}
 }
 
@@ -122,4 +128,45 @@ func (h *AdminHandler) UpdateUserRole(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, toAdminUserResponse(user))
+}
+
+func (h *AdminHandler) ListVideos(w http.ResponseWriter, r *http.Request) {
+	limit, offset := parseLimitOffset(r)
+
+	videos, err := h.repo.AdminListVideos(r.Context(), repository.AdminListVideosParams{
+		Limit:  limit,
+		Offset: offset,
+	})
+	if err != nil {
+		log.Printf("admin: list videos: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	resp := make([]videoResponse, len(videos))
+	for i, v := range videos {
+		resp[i] = toVideoResponse(v)
+	}
+
+	writeJSON(w, http.StatusOK, resp)
+}
+
+// DeleteVideo is a hard delete — videos has no soft-delete column the way
+// users/comments do, and every child table (comments, video_interactions,
+// video_files, watch_history, playlist_videos) already cascades on
+// videos.id, so this cleans up correctly without a new schema addition.
+func (h *AdminHandler) DeleteVideo(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "invalid video id", http.StatusBadRequest)
+		return
+	}
+
+	if err := h.repo.AdminDeleteVideo(r.Context(), id); err != nil {
+		log.Printf("admin: delete video: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

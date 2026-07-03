@@ -57,6 +57,8 @@ type VideoRepository interface {
 	ListPublicVideos(ctx context.Context, arg repository.ListPublicVideosParams) ([]repository.Video, error)
 	GetVideoInteraction(ctx context.Context, arg repository.GetVideoInteractionParams) (repository.VideoInteraction, error)
 	SearchVideos(ctx context.Context, arg repository.SearchVideosParams) ([]repository.Video, error)
+	AdminListVideos(ctx context.Context, arg repository.AdminListVideosParams) ([]repository.Video, error)
+	AdminDeleteVideo(ctx context.Context, id uuid.UUID) error
 }
 
 type ChannelRepository interface {

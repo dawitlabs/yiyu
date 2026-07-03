@@ -12,6 +12,66 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const adminDeleteVideo = `-- name: AdminDeleteVideo :exec
+DELETE FROM videos WHERE id = $1
+`
+
+func (q *Queries) AdminDeleteVideo(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, adminDeleteVideo, id)
+	return err
+}
+
+const adminListVideos = `-- name: AdminListVideos :many
+SELECT id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration FROM videos
+ORDER BY uploaded_at DESC
+LIMIT $1 OFFSET $2
+`
+
+type AdminListVideosParams struct {
+	Limit  int32 `db:"limit" json:"limit"`
+	Offset int32 `db:"offset" json:"offset"`
+}
+
+func (q *Queries) AdminListVideos(ctx context.Context, arg AdminListVideosParams) ([]Video, error) {
+	rows, err := q.db.Query(ctx, adminListVideos, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Video
+	for rows.Next() {
+		var i Video
+		if err := rows.Scan(
+			&i.ID,
+			&i.ChannelID,
+			&i.Title,
+			&i.Description,
+			&i.Status,
+			&i.Visibility,
+			&i.ViewsCount,
+			&i.LikesCount,
+			&i.DislikesCount,
+			&i.ThumbnailUrl,
+			&i.OriginalUrl,
+			&i.HlsPlaylistUrl,
+			&i.Category,
+			&i.Tags,
+			&i.UploadedAt,
+			&i.PublishedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Duration,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const createVideo = `-- name: CreateVideo :one
 INSERT INTO videos (channel_id, title, description, duration, status, visibility, category, tags, original_url, thumbnail_url)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)

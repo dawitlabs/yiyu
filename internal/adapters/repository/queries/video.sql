@@ -27,6 +27,14 @@ WHERE visibility = 'public' AND status = 'ready'
 ORDER BY uploaded_at DESC
 LIMIT $1 OFFSET $2;
 
+-- name: AdminListVideos :many
+SELECT * FROM videos
+ORDER BY uploaded_at DESC
+LIMIT $1 OFFSET $2;
+
+-- name: AdminDeleteVideo :exec
+DELETE FROM videos WHERE id = $1;
+
 -- name: SearchVideos :many
 SELECT videos.id, videos.channel_id, videos.title, videos.description, videos.status, videos.visibility, videos.views_count, videos.likes_count, videos.dislikes_count, videos.thumbnail_url, videos.original_url, videos.hls_playlist_url, videos.category, videos.tags, videos.uploaded_at, videos.published_at, videos.created_at, videos.updated_at, videos.duration
 FROM videos
