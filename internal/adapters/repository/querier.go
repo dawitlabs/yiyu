@@ -60,6 +60,9 @@ type Querier interface {
 	IncrementVideoDislikes(ctx context.Context, id uuid.UUID) (Video, error)
 	IncrementVideoLikes(ctx context.Context, id uuid.UUID) (Video, error)
 	IncrementVideoViews(ctx context.Context, id uuid.UUID) (Video, error)
+	// Same as ListPlaylistsByChannel but includes private playlists — only
+	// meant to be used once the caller is confirmed as the channel's owner.
+	ListAllPlaylistsByChannel(ctx context.Context, arg ListAllPlaylistsByChannelParams) ([]Playlist, error)
 	ListCommentsByVideo(ctx context.Context, arg ListCommentsByVideoParams) ([]ListCommentsByVideoRow, error)
 	ListPlaylistVideos(ctx context.Context, playlistID uuid.UUID) ([]Video, error)
 	ListPlaylistsByChannel(ctx context.Context, arg ListPlaylistsByChannelParams) ([]Playlist, error)

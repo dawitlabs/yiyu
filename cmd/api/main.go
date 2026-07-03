@@ -118,7 +118,7 @@ func main() {
 	mux.Handle("GET /history", requireAuth(http.HandlerFunc(watchHistory.ListHistory)))
 
 	mux.Handle("POST /playlists", requireAuth(http.HandlerFunc(playlist.CreatePlaylist)))
-	mux.HandleFunc("GET /channels/{handle}/playlists", playlist.ListPlaylistsByChannel)
+	mux.Handle("GET /channels/{handle}/playlists", optionalAuth(http.HandlerFunc(playlist.ListPlaylistsByChannel)))
 	mux.Handle("GET /playlists/{id}", optionalAuth(http.HandlerFunc(playlist.GetPlaylist)))
 	mux.Handle("DELETE /playlists/{id}", requireAuth(http.HandlerFunc(playlist.DeletePlaylist)))
 	mux.Handle("POST /playlists/{id}/videos", requireAuth(http.HandlerFunc(playlist.AddVideo)))

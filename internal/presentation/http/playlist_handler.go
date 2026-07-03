@@ -111,11 +111,28 @@ func (h *PlaylistHandler) ListPlaylistsByChannel(w http.ResponseWriter, r *http.
 
 	limit, offset := parseLimitOffset(r)
 
-	playlists, err := h.repo.ListPlaylistsByChannel(r.Context(), repository.ListPlaylistsByChannelParams{
-		ChannelID: pgtype.UUID{Bytes: channel.ID, Valid: true},
-		Limit:     limit,
-		Offset:    offset,
-	})
+	isOwner := false
+	if user, ok := UserFromContext(r.Context()); ok {
+		isOwner = channel.UserID.Valid && channel.UserID.Bytes == user.ID
+	}
+
+	var playlists []repository.Playlist
+	if isOwner {
+		// The owner sees their private playlists too — this is the one
+		// listing endpoint the "add to playlist" picker uses, and it needs
+		// to offer private playlists as a destination, not just public ones.
+		playlists, err = h.repo.ListAllPlaylistsByChannel(r.Context(), repository.ListAllPlaylistsByChannelParams{
+			ChannelID: pgtype.UUID{Bytes: channel.ID, Valid: true},
+			Limit:     limit,
+			Offset:    offset,
+		})
+	} else {
+		playlists, err = h.repo.ListPlaylistsByChannel(r.Context(), repository.ListPlaylistsByChannelParams{
+			ChannelID: pgtype.UUID{Bytes: channel.ID, Valid: true},
+			Limit:     limit,
+			Offset:    offset,
+		})
+	}
 	if err != nil {
 		log.Printf("list playlists: %v", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)

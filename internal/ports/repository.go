@@ -101,6 +101,7 @@ type PlaylistRepository interface {
 	AddVideoToPlaylist(ctx context.Context, arg repository.AddVideoToPlaylistParams) (repository.PlaylistVideo, error)
 	RemoveVideoFromPlaylist(ctx context.Context, arg repository.RemoveVideoFromPlaylistParams) error
 	ListPlaylistVideos(ctx context.Context, id uuid.UUID) ([]repository.Video, error)
+	ListAllPlaylistsByChannel(ctx context.Context, arg repository.ListAllPlaylistsByChannelParams) ([]repository.Playlist, error)
 }
 
 // Compile-time guard: PostgresRepository must satisfy Repository in full.

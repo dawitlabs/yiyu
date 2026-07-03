@@ -96,6 +96,49 @@ func (q *Queries) GetPlaylistByID(ctx context.Context, id uuid.UUID) (Playlist, 
 	return i, err
 }
 
+const listAllPlaylistsByChannel = `-- name: ListAllPlaylistsByChannel :many
+SELECT id, channel_id, name, description, is_public, created_at, updated_at FROM playlists
+WHERE channel_id = $1
+ORDER BY created_at DESC
+LIMIT $2 OFFSET $3
+`
+
+type ListAllPlaylistsByChannelParams struct {
+	ChannelID pgtype.UUID `db:"channel_id" json:"channel_id"`
+	Limit     int32       `db:"limit" json:"limit"`
+	Offset    int32       `db:"offset" json:"offset"`
+}
+
+// Same as ListPlaylistsByChannel but includes private playlists — only
+// meant to be used once the caller is confirmed as the channel's owner.
+func (q *Queries) ListAllPlaylistsByChannel(ctx context.Context, arg ListAllPlaylistsByChannelParams) ([]Playlist, error) {
+	rows, err := q.db.Query(ctx, listAllPlaylistsByChannel, arg.ChannelID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Playlist
+	for rows.Next() {
+		var i Playlist
+		if err := rows.Scan(
+			&i.ID,
+			&i.ChannelID,
+			&i.Name,
+			&i.Description,
+			&i.IsPublic,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listPlaylistVideos = `-- name: ListPlaylistVideos :many
 SELECT videos.id, videos.channel_id, videos.title, videos.description, videos.status, videos.visibility, videos.views_count, videos.likes_count, videos.dislikes_count, videos.thumbnail_url, videos.original_url, videos.hls_playlist_url, videos.category, videos.tags, videos.uploaded_at, videos.published_at, videos.created_at, videos.updated_at, videos.duration
 FROM playlist_videos

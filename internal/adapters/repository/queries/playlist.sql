@@ -12,6 +12,14 @@ WHERE channel_id = $1 AND is_public = true
 ORDER BY created_at DESC
 LIMIT $2 OFFSET $3;
 
+-- name: ListAllPlaylistsByChannel :many
+-- Same as ListPlaylistsByChannel but includes private playlists — only
+-- meant to be used once the caller is confirmed as the channel's owner.
+SELECT * FROM playlists
+WHERE channel_id = $1
+ORDER BY created_at DESC
+LIMIT $2 OFFSET $3;
+
 -- name: DeletePlaylist :exec
 DELETE FROM playlists WHERE id = $1;
 

@@ -235,3 +235,7 @@ func (r *PostgresRepository) RemoveVideoFromPlaylist(ctx context.Context, arg Re
 func (r *PostgresRepository) ListPlaylistVideos(ctx context.Context, id uuid.UUID) ([]Video, error) {
 	return r.queries.ListPlaylistVideos(ctx, id)
 }
+
+func (r *PostgresRepository) ListAllPlaylistsByChannel(ctx context.Context, arg ListAllPlaylistsByChannelParams) ([]Playlist, error) {
+	return r.queries.ListAllPlaylistsByChannel(ctx, arg)
+}
