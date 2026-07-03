@@ -176,6 +176,10 @@ func (r *PostgresRepository) ListCommentsByVideo(ctx context.Context, arg ListCo
 	return r.queries.ListCommentsByVideo(ctx, arg)
 }
 
+func (r *PostgresRepository) ListCommentReplies(ctx context.Context, arg ListCommentRepliesParams) ([]ListCommentRepliesRow, error) {
+	return r.queries.ListCommentReplies(ctx, arg)
+}
+
 func (r *PostgresRepository) DeleteComment(ctx context.Context, id uuid.UUID) error {
 	return r.queries.DeleteComment(ctx, id)
 }

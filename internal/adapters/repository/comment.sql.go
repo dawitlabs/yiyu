@@ -13,19 +13,25 @@ import (
 )
 
 const createComment = `-- name: CreateComment :one
-INSERT INTO comments (video_id, user_id, content)
-VALUES ($1, $2, $3)
+INSERT INTO comments (video_id, user_id, content, parent_id)
+VALUES ($1, $2, $3, $4)
 RETURNING id, video_id, user_id, parent_id, content, likes_count, is_deleted, created_at, updated_at
 `
 
 type CreateCommentParams struct {
-	VideoID pgtype.UUID `db:"video_id" json:"video_id"`
-	UserID  pgtype.UUID `db:"user_id" json:"user_id"`
-	Content string      `db:"content" json:"content"`
+	VideoID  pgtype.UUID `db:"video_id" json:"video_id"`
+	UserID   pgtype.UUID `db:"user_id" json:"user_id"`
+	Content  string      `db:"content" json:"content"`
+	ParentID pgtype.UUID `db:"parent_id" json:"parent_id"`
 }
 
 func (q *Queries) CreateComment(ctx context.Context, arg CreateCommentParams) (Comment, error) {
-	row := q.db.QueryRow(ctx, createComment, arg.VideoID, arg.UserID, arg.Content)
+	row := q.db.QueryRow(ctx, createComment,
+		arg.VideoID,
+		arg.UserID,
+		arg.Content,
+		arg.ParentID,
+	)
 	var i Comment
 	err := row.Scan(
 		&i.ID,
@@ -71,11 +77,74 @@ func (q *Queries) GetCommentByID(ctx context.Context, id uuid.UUID) (Comment, er
 	return i, err
 }
 
+const listCommentReplies = `-- name: ListCommentReplies :many
+SELECT comments.id, comments.video_id, comments.user_id, comments.parent_id, comments.content, comments.likes_count, comments.is_deleted, comments.created_at, comments.updated_at, users.id, users.username, users.email, users.display_name, users.bio, users.avatar_url, users.role, users.is_active, users.password_hash, users.created_at, users.updated_at, users.deleted_at, users.deleted_by
+FROM comments
+JOIN users ON users.id = comments.user_id
+WHERE comments.parent_id = $1 AND comments.is_deleted = false
+ORDER BY comments.created_at ASC
+LIMIT $2 OFFSET $3
+`
+
+type ListCommentRepliesParams struct {
+	ParentID pgtype.UUID `db:"parent_id" json:"parent_id"`
+	Limit    int32       `db:"limit" json:"limit"`
+	Offset   int32       `db:"offset" json:"offset"`
+}
+
+type ListCommentRepliesRow struct {
+	Comment Comment `db:"comment" json:"comment"`
+	User    User    `db:"user" json:"user"`
+}
+
+func (q *Queries) ListCommentReplies(ctx context.Context, arg ListCommentRepliesParams) ([]ListCommentRepliesRow, error) {
+	rows, err := q.db.Query(ctx, listCommentReplies, arg.ParentID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListCommentRepliesRow
+	for rows.Next() {
+		var i ListCommentRepliesRow
+		if err := rows.Scan(
+			&i.Comment.ID,
+			&i.Comment.VideoID,
+			&i.Comment.UserID,
+			&i.Comment.ParentID,
+			&i.Comment.Content,
+			&i.Comment.LikesCount,
+			&i.Comment.IsDeleted,
+			&i.Comment.CreatedAt,
+			&i.Comment.UpdatedAt,
+			&i.User.ID,
+			&i.User.Username,
+			&i.User.Email,
+			&i.User.DisplayName,
+			&i.User.Bio,
+			&i.User.AvatarUrl,
+			&i.User.Role,
+			&i.User.IsActive,
+			&i.User.PasswordHash,
+			&i.User.CreatedAt,
+			&i.User.UpdatedAt,
+			&i.User.DeletedAt,
+			&i.User.DeletedBy,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listCommentsByVideo = `-- name: ListCommentsByVideo :many
 SELECT comments.id, comments.video_id, comments.user_id, comments.parent_id, comments.content, comments.likes_count, comments.is_deleted, comments.created_at, comments.updated_at, users.id, users.username, users.email, users.display_name, users.bio, users.avatar_url, users.role, users.is_active, users.password_hash, users.created_at, users.updated_at, users.deleted_at, users.deleted_by
 FROM comments
 JOIN users ON users.id = comments.user_id
-WHERE comments.video_id = $1 AND comments.is_deleted = false
+WHERE comments.video_id = $1 AND comments.is_deleted = false AND comments.parent_id IS NULL
 ORDER BY comments.created_at DESC
 LIMIT $2 OFFSET $3
 `
@@ -91,6 +160,8 @@ type ListCommentsByVideoRow struct {
 	User    User    `db:"user" json:"user"`
 }
 
+// Top-level only (parent_id IS NULL) — replies are fetched separately via
+// ListCommentReplies, not mixed flat into the same list.
 func (q *Queries) ListCommentsByVideo(ctx context.Context, arg ListCommentsByVideoParams) ([]ListCommentsByVideoRow, error) {
 	rows, err := q.db.Query(ctx, listCommentsByVideo, arg.VideoID, arg.Limit, arg.Offset)
 	if err != nil {

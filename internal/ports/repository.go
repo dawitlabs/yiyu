@@ -74,6 +74,7 @@ type CommentRepository interface {
 	CreateComment(ctx context.Context, arg repository.CreateCommentParams) (repository.Comment, error)
 	GetCommentByID(ctx context.Context, id uuid.UUID) (repository.Comment, error)
 	ListCommentsByVideo(ctx context.Context, arg repository.ListCommentsByVideoParams) ([]repository.ListCommentsByVideoRow, error)
+	ListCommentReplies(ctx context.Context, arg repository.ListCommentRepliesParams) ([]repository.ListCommentRepliesRow, error)
 	DeleteComment(ctx context.Context, id uuid.UUID) error
 }
 

@@ -35,10 +35,11 @@ type commentResponse struct {
 	Content   string                `json:"content"`
 	Author    commentAuthorResponse `json:"author"`
 	CreatedAt time.Time             `json:"created_at"`
+	ParentID  *string               `json:"parent_id"`
 }
 
 func toCommentResponse(c repository.Comment, author repository.User) commentResponse {
-	return commentResponse{
+	resp := commentResponse{
 		ID:      c.ID.String(),
 		Content: c.Content,
 		Author: commentAuthorResponse{
@@ -47,10 +48,16 @@ func toCommentResponse(c repository.Comment, author repository.User) commentResp
 		},
 		CreatedAt: c.CreatedAt.Time,
 	}
+	if c.ParentID.Valid {
+		id := uuid.UUID(c.ParentID.Bytes).String()
+		resp.ParentID = &id
+	}
+	return resp
 }
 
 type createCommentRequest struct {
-	Content string `json:"content"`
+	Content  string `json:"content"`
+	ParentID string `json:"parent_id"`
 }
 
 func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
@@ -70,12 +77,32 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var parentID pgtype.UUID
+	if req.ParentID != "" {
+		parsed, err := uuid.Parse(req.ParentID)
+		if err != nil {
+			http.Error(w, "invalid parent_id", http.StatusBadRequest)
+			return
+		}
+		parent, err := h.repo.GetCommentByID(r.Context(), parsed)
+		if err != nil {
+			http.Error(w, "parent comment not found", http.StatusNotFound)
+			return
+		}
+		if !parent.VideoID.Valid || parent.VideoID.Bytes != videoID {
+			http.Error(w, "parent comment belongs to a different video", http.StatusBadRequest)
+			return
+		}
+		parentID = pgtype.UUID{Bytes: parsed, Valid: true}
+	}
+
 	user, _ := UserFromContext(r.Context())
 
 	comment, err := h.repo.CreateComment(r.Context(), repository.CreateCommentParams{
-		VideoID: pgtype.UUID{Bytes: videoID, Valid: true},
-		UserID:  pgtype.UUID{Bytes: user.ID, Valid: true},
-		Content: req.Content,
+		VideoID:  pgtype.UUID{Bytes: videoID, Valid: true},
+		UserID:   pgtype.UUID{Bytes: user.ID, Valid: true},
+		Content:  req.Content,
+		ParentID: parentID,
 	})
 	if err != nil {
 		log.Printf("create comment: %v", err)
@@ -102,6 +129,34 @@ func (h *CommentHandler) ListCommentsByVideo(w http.ResponseWriter, r *http.Requ
 	})
 	if err != nil {
 		log.Printf("list comments: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	resp := make([]commentResponse, len(rows))
+	for i, row := range rows {
+		resp[i] = toCommentResponse(row.Comment, row.User)
+	}
+
+	writeJSON(w, http.StatusOK, resp)
+}
+
+func (h *CommentHandler) ListReplies(w http.ResponseWriter, r *http.Request) {
+	parentID, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "invalid comment id", http.StatusBadRequest)
+		return
+	}
+
+	limit, offset := parseLimitOffset(r)
+
+	rows, err := h.repo.ListCommentReplies(r.Context(), repository.ListCommentRepliesParams{
+		ParentID: pgtype.UUID{Bytes: parentID, Valid: true},
+		Limit:    limit,
+		Offset:   offset,
+	})
+	if err != nil {
+		log.Printf("list comment replies: %v", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}

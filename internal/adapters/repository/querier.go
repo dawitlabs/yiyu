@@ -63,6 +63,9 @@ type Querier interface {
 	// Same as ListPlaylistsByChannel but includes private playlists — only
 	// meant to be used once the caller is confirmed as the channel's owner.
 	ListAllPlaylistsByChannel(ctx context.Context, arg ListAllPlaylistsByChannelParams) ([]Playlist, error)
+	ListCommentReplies(ctx context.Context, arg ListCommentRepliesParams) ([]ListCommentRepliesRow, error)
+	// Top-level only (parent_id IS NULL) — replies are fetched separately via
+	// ListCommentReplies, not mixed flat into the same list.
 	ListCommentsByVideo(ctx context.Context, arg ListCommentsByVideoParams) ([]ListCommentsByVideoRow, error)
 	ListPlaylistVideos(ctx context.Context, playlistID uuid.UUID) ([]Video, error)
 	ListPlaylistsByChannel(ctx context.Context, arg ListPlaylistsByChannelParams) ([]Playlist, error)

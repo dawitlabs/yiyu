@@ -104,6 +104,7 @@ func main() {
 
 	mux.Handle("POST /videos/{id}/comments", requireAuth(http.HandlerFunc(comment.CreateComment)))
 	mux.HandleFunc("GET /videos/{id}/comments", comment.ListCommentsByVideo)
+	mux.HandleFunc("GET /comments/{id}/replies", comment.ListReplies)
 	mux.Handle("DELETE /comments/{id}", requireAuth(http.HandlerFunc(comment.DeleteComment)))
 	mux.Handle("POST /comments/{id}/report", requireAuth(http.HandlerFunc(comment.ReportComment)))
 
