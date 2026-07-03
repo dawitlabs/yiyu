@@ -53,6 +53,7 @@ type VideoRepository interface {
 	IncrementVideoLikes(ctx context.Context, id uuid.UUID) (repository.Video, error)
 	IncrementVideoDislikes(ctx context.Context, id uuid.UUID) (repository.Video, error)
 	ListPublicVideos(ctx context.Context, arg repository.ListPublicVideosParams) ([]repository.Video, error)
+	ListRelatedVideos(ctx context.Context, arg repository.ListRelatedVideosParams) ([]repository.Video, error)
 	GetVideoInteraction(ctx context.Context, arg repository.GetVideoInteractionParams) (repository.VideoInteraction, error)
 	SearchVideos(ctx context.Context, arg repository.SearchVideosParams) ([]repository.Video, error)
 	AdminListVideos(ctx context.Context, arg repository.AdminListVideosParams) ([]repository.Video, error)

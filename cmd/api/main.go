@@ -94,6 +94,7 @@ func main() {
 	mux.Handle("POST /videos", requireAuth(http.HandlerFunc(video.CreateVideo)))
 	mux.HandleFunc("GET /videos", video.ListPublicVideos)
 	mux.HandleFunc("GET /videos/{id}", video.GetVideoByID)
+	mux.HandleFunc("GET /videos/{id}/related", video.ListRelatedVideos)
 	mux.Handle("POST /videos/{id}/report", requireAuth(http.HandlerFunc(video.ReportVideo)))
 	mux.HandleFunc("POST /videos/{id}/view", video.RecordView)
 	mux.Handle("POST /videos/{id}/like", requireAuth(http.HandlerFunc(video.LikeVideo)))

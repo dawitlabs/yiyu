@@ -49,6 +49,17 @@ WHERE visibility = 'public' AND status = 'ready'
 ORDER BY uploaded_at DESC
 LIMIT $1 OFFSET $2;
 
+-- name: ListRelatedVideos :many
+-- No ML/recommendation model — just same channel first, then same
+-- category, ranked by views. Good enough at this scale.
+SELECT * FROM videos
+WHERE id != $1
+  AND visibility = 'public'
+  AND status = 'ready'
+  AND (channel_id = $2 OR (category != '' AND category = $3))
+ORDER BY (channel_id = $2) DESC, views_count DESC
+LIMIT $4;
+
 -- name: AdminListVideos :many
 SELECT * FROM videos
 ORDER BY uploaded_at DESC

@@ -404,6 +404,70 @@ func (q *Queries) ListPublicVideos(ctx context.Context, arg ListPublicVideosPara
 	return items, nil
 }
 
+const listRelatedVideos = `-- name: ListRelatedVideos :many
+SELECT id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration FROM videos
+WHERE id != $1
+  AND visibility = 'public'
+  AND status = 'ready'
+  AND (channel_id = $2 OR (category != '' AND category = $3))
+ORDER BY (channel_id = $2) DESC, views_count DESC
+LIMIT $4
+`
+
+type ListRelatedVideosParams struct {
+	ID        uuid.UUID   `db:"id" json:"id"`
+	ChannelID pgtype.UUID `db:"channel_id" json:"channel_id"`
+	Category  pgtype.Text `db:"category" json:"category"`
+	Limit     int32       `db:"limit" json:"limit"`
+}
+
+// No ML/recommendation model — just same channel first, then same
+// category, ranked by views. Good enough at this scale.
+func (q *Queries) ListRelatedVideos(ctx context.Context, arg ListRelatedVideosParams) ([]Video, error) {
+	rows, err := q.db.Query(ctx, listRelatedVideos,
+		arg.ID,
+		arg.ChannelID,
+		arg.Category,
+		arg.Limit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Video
+	for rows.Next() {
+		var i Video
+		if err := rows.Scan(
+			&i.ID,
+			&i.ChannelID,
+			&i.Title,
+			&i.Description,
+			&i.Status,
+			&i.Visibility,
+			&i.ViewsCount,
+			&i.LikesCount,
+			&i.DislikesCount,
+			&i.ThumbnailUrl,
+			&i.OriginalUrl,
+			&i.HlsPlaylistUrl,
+			&i.Category,
+			&i.Tags,
+			&i.UploadedAt,
+			&i.PublishedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Duration,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listVideosByChannel = `-- name: ListVideosByChannel :many
 SELECT id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration FROM videos WHERE channel_id = $1 ORDER BY uploaded_at DESC LIMIT $2 OFFSET $3
 `

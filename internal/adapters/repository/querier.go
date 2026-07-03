@@ -75,6 +75,9 @@ type Querier interface {
 	ListPlaylistVideos(ctx context.Context, playlistID uuid.UUID) ([]Video, error)
 	ListPlaylistsByChannel(ctx context.Context, arg ListPlaylistsByChannelParams) ([]Playlist, error)
 	ListPublicVideos(ctx context.Context, arg ListPublicVideosParams) ([]Video, error)
+	// No ML/recommendation model — just same channel first, then same
+	// category, ranked by views. Good enough at this scale.
+	ListRelatedVideos(ctx context.Context, arg ListRelatedVideosParams) ([]Video, error)
 	ListSubscriptionFeed(ctx context.Context, arg ListSubscriptionFeedParams) ([]Video, error)
 	ListVideosByChannel(ctx context.Context, arg ListVideosByChannelParams) ([]Video, error)
 	ListWatchHistory(ctx context.Context, arg ListWatchHistoryParams) ([]Video, error)

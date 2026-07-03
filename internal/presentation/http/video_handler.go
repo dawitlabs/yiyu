@@ -164,6 +164,41 @@ func (h *VideoHandler) GetVideoByID(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, toVideoResponse(video))
 }
 
+func (h *VideoHandler) ListRelatedVideos(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "invalid video id", http.StatusBadRequest)
+		return
+	}
+
+	video, err := h.repo.GetVideoByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, "video not found", http.StatusNotFound)
+		return
+	}
+
+	limit, _ := parseLimitOffset(r)
+
+	videos, err := h.repo.ListRelatedVideos(r.Context(), repository.ListRelatedVideosParams{
+		ID:        id,
+		ChannelID: video.ChannelID,
+		Category:  video.Category,
+		Limit:     limit,
+	})
+	if err != nil {
+		log.Printf("list related videos: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	resp := make([]videoResponse, len(videos))
+	for i, v := range videos {
+		resp[i] = toVideoResponse(v)
+	}
+
+	writeJSON(w, http.StatusOK, resp)
+}
+
 // parseLimitOffset reads ?limit=&offset= query params with sane defaults and
 // bounds, shared across every paginated list endpoint.
 func parseLimitOffset(r *http.Request) (limit int32, offset int32) {
