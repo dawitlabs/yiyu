@@ -77,6 +77,14 @@ export function Nav({
                 Upload
               </Link>
             )}
+            {channel && (
+              <Link
+                href="/analytics"
+                className="text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white"
+              >
+                Analytics
+              </Link>
+            )}
             <span className="text-black/60 dark:text-white/60">
               {user.username}
             </span>
