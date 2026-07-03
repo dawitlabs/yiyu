@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { AddToPlaylist } from "@/components/add-to-playlist";
 import { CaptionManager } from "@/components/caption-manager";
+import { ChapterManager } from "@/components/chapter-manager";
 import { CommentSection } from "@/components/comment-section";
 import { ReactionButtons } from "@/components/reaction-buttons";
 import { ReportButton } from "@/components/report-button";
@@ -9,6 +10,7 @@ import { VideoPlayer } from "@/components/video-player";
 import { serverFetch } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
 import type { Caption } from "@/lib/captions";
+import type { Chapter } from "@/lib/chapters";
 import type { Comment } from "@/lib/comments";
 import { getMyChannel } from "@/lib/my-channel";
 import type { Playlist } from "@/lib/playlists";
@@ -21,15 +23,23 @@ export default async function WatchPage({
 }) {
   const { id } = await params;
 
-  const [res, commentsRes, relatedRes, captionsRes, user, myChannel] =
-    await Promise.all([
-      serverFetch(`/videos/${id}`),
-      serverFetch(`/videos/${id}/comments`),
-      serverFetch(`/videos/${id}/related`),
-      serverFetch(`/videos/${id}/captions`),
-      getCurrentUser(),
-      getMyChannel(),
-    ]);
+  const [
+    res,
+    commentsRes,
+    relatedRes,
+    captionsRes,
+    chaptersRes,
+    user,
+    myChannel,
+  ] = await Promise.all([
+    serverFetch(`/videos/${id}`),
+    serverFetch(`/videos/${id}/comments`),
+    serverFetch(`/videos/${id}/related`),
+    serverFetch(`/videos/${id}/captions`),
+    serverFetch(`/videos/${id}/chapters`),
+    getCurrentUser(),
+    getMyChannel(),
+  ]);
   if (!res.ok) {
     notFound();
   }
@@ -38,6 +48,7 @@ export default async function WatchPage({
   const comments: Comment[] = commentsRes.ok ? await commentsRes.json() : [];
   const relatedVideos: Video[] = relatedRes.ok ? await relatedRes.json() : [];
   const captions: Caption[] = captionsRes.ok ? await captionsRes.json() : [];
+  const chapters: Chapter[] = chaptersRes.ok ? await chaptersRes.json() : [];
   const isOwner = myChannel?.id === video.channel_id;
 
   let myPlaylists: Playlist[] = [];
@@ -62,17 +73,19 @@ export default async function WatchPage({
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
-      <div className="aspect-video overflow-hidden rounded-lg bg-black">
-        <VideoPlayer
-          videoId={video.id}
-          src={video.original_url}
-          canRecordHistory={user !== null}
-          captions={captions}
-        />
-      </div>
+      <VideoPlayer
+        videoId={video.id}
+        src={video.original_url}
+        canRecordHistory={user !== null}
+        captions={captions}
+        chapters={chapters}
+      />
 
       {isOwner && (
-        <CaptionManager videoId={video.id} initialCaptions={captions} />
+        <>
+          <CaptionManager videoId={video.id} initialCaptions={captions} />
+          <ChapterManager videoId={video.id} initialChapters={chapters} />
+        </>
       )}
 
       <h1 className="mt-4 text-xl font-semibold tracking-tight">
