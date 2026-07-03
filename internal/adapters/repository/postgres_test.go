@@ -210,3 +210,64 @@ func TestPostgresRepository_DeleteUser(t *testing.T) {
 		t.Error("GetUserByID() should fail for a deleted user")
 	}
 }
+
+func TestPostgresRepository_Video(t *testing.T) {
+	pool := testPool(t)
+	repo := NewPostgresRepository(pool)
+	ctx := context.Background()
+
+	created, err := repo.CreateVideo(ctx, CreateVideoParams{
+		Title:      "tdd test video",
+		Status:     "processing",
+		Visibility: "public",
+	})
+	if err != nil {
+		t.Fatalf("CreateVideo() error = %v", err)
+	}
+	t.Cleanup(func() {
+		pool.Exec(context.Background(), "DELETE FROM videos WHERE id = $1", created.ID)
+	})
+
+	got, err := repo.GetVideoByID(ctx, created.ID)
+	if err != nil {
+		t.Fatalf("GetVideoByID() error = %v", err)
+	}
+	if got.Title != created.Title {
+		t.Errorf("Title = %q, want %q", got.Title, created.Title)
+	}
+
+	updated, err := repo.UpdateVideoStatus(ctx, UpdateVideoStatusParams{
+		ID:     created.ID,
+		Status: "ready",
+	})
+	if err != nil {
+		t.Fatalf("UpdateVideoStatus() error = %v", err)
+	}
+	if updated.Status != "ready" {
+		t.Errorf("Status = %q, want %q", updated.Status, "ready")
+	}
+
+	viewed, err := repo.IncrementVideoViews(ctx, created.ID)
+	if err != nil {
+		t.Fatalf("IncrementVideoViews() error = %v", err)
+	}
+	if viewed.ViewsCount.Int64 != 1 {
+		t.Errorf("ViewsCount = %d, want 1", viewed.ViewsCount.Int64)
+	}
+
+	liked, err := repo.IncrementVideoLikes(ctx, created.ID)
+	if err != nil {
+		t.Fatalf("IncrementVideoLikes() error = %v", err)
+	}
+	if liked.LikesCount.Int64 != 1 {
+		t.Errorf("LikesCount = %d, want 1", liked.LikesCount.Int64)
+	}
+
+	disliked, err := repo.IncrementVideoDislikes(ctx, created.ID)
+	if err != nil {
+		t.Fatalf("IncrementVideoDislikes() error = %v", err)
+	}
+	if disliked.DislikesCount.Int64 != 1 {
+		t.Errorf("DislikesCount = %d, want 1", disliked.DislikesCount.Int64)
+	}
+}

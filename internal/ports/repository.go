@@ -42,7 +42,12 @@ type SessionRepository interface {
 type VideoRepository interface {
 	CreateVideo(ctx context.Context, arg repository.CreateVideoParams) (repository.Video, error)
 	GetVideoByID(ctx context.Context, id uuid.UUID) (repository.Video, error)
-	ListVideoByChannel(ctx context.Context, arg repository.ListVideosByChannelParams) (repository.Video, error)
+	ListVideosByChannel(ctx context.Context, arg repository.ListVideosByChannelParams) ([]repository.Video, error)
 	UpdateVideoStatus(ctx context.Context, arg repository.UpdateVideoStatusParams) (repository.Video, error)
-	IncrementVideoViews(ctx context.Context, id uuid.UUID) error
+	IncrementVideoViews(ctx context.Context, id uuid.UUID) (repository.Video, error)
+	IncrementVideoLikes(ctx context.Context, id uuid.UUID) (repository.Video, error)
+	IncrementVideoDislikes(ctx context.Context, id uuid.UUID) (repository.Video, error)
 }
+
+// Compile-time guard: PostgresRepository must satisfy Repository in full.
+var _ Repository = (*repository.PostgresRepository)(nil)

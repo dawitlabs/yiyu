@@ -70,3 +70,31 @@ func (r *PostgresRepository) DeleteSession(ctx context.Context, tokenHash string
 func (r *PostgresRepository) DeleteUserSessions(ctx context.Context, userID uuid.UUID) error {
 	return r.queries.DeleteUserSessions(ctx, userID)
 }
+
+func (r *PostgresRepository) CreateVideo(ctx context.Context, arg CreateVideoParams) (Video, error) {
+	return r.queries.CreateVideo(ctx, arg)
+}
+
+func (r *PostgresRepository) GetVideoByID(ctx context.Context, id uuid.UUID) (Video, error) {
+	return r.queries.GetVideoByID(ctx, id)
+}
+
+func (r *PostgresRepository) ListVideosByChannel(ctx context.Context, arg ListVideosByChannelParams) ([]Video, error) {
+	return r.queries.ListVideosByChannel(ctx, arg)
+}
+
+func (r *PostgresRepository) UpdateVideoStatus(ctx context.Context, arg UpdateVideoStatusParams) (Video, error) {
+	return r.queries.UpdateVideoStatus(ctx, arg)
+}
+
+func (r *PostgresRepository) IncrementVideoViews(ctx context.Context, id uuid.UUID) (Video, error) {
+	return r.queries.IncrementVideoViews(ctx, id)
+}
+
+func (r *PostgresRepository) IncrementVideoLikes(ctx context.Context, id uuid.UUID) (Video, error) {
+	return r.queries.IncrementVideoLikes(ctx, id)
+}
+
+func (r *PostgresRepository) IncrementVideoDislikes(ctx context.Context, id uuid.UUID) (Video, error) {
+	return r.queries.IncrementVideoDislikes(ctx, id)
+}
