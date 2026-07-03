@@ -3,19 +3,55 @@
 import { useRouter } from "next/navigation";
 import { type SubmitEvent, useState } from "react";
 
+type Stage = "idle" | "uploading" | "publishing";
+
 export function CreateVideoForm() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [originalUrl, setOriginalUrl] = useState("");
+  const [videoFile, setVideoFile] = useState<File | null>(null);
   const [thumbnailUrl, setThumbnailUrl] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [stage, setStage] = useState<Stage>("idle");
 
   async function handleSubmit(e: SubmitEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    setIsSubmitting(true);
+
+    if (!videoFile) {
+      setError("Choose a video file.");
+      return;
+    }
+
+    setStage("uploading");
+
+    const presignRes = await fetch("/api/uploads/presign", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filename: videoFile.name }),
+    });
+    if (!presignRes.ok) {
+      setStage("idle");
+      setError("Could not start the upload. Try again.");
+      return;
+    }
+    const {
+      upload_url,
+      public_url,
+    }: { upload_url: string; public_url: string } = await presignRes.json();
+
+    const putRes = await fetch(upload_url, {
+      method: "PUT",
+      headers: { "Content-Type": videoFile.type || "application/octet-stream" },
+      body: videoFile,
+    });
+    if (!putRes.ok) {
+      setStage("idle");
+      setError("Upload failed partway through. Try again.");
+      return;
+    }
+
+    setStage("publishing");
 
     const res = await fetch("/api/videos", {
       method: "POST",
@@ -23,14 +59,14 @@ export function CreateVideoForm() {
       body: JSON.stringify({
         title,
         description,
-        original_url: originalUrl,
+        original_url: public_url,
         thumbnail_url: thumbnailUrl,
       }),
     });
 
     if (!res.ok) {
-      setIsSubmitting(false);
-      setError("Something went wrong. Try again.");
+      setStage("idle");
+      setError("Upload succeeded but publishing failed. Try again.");
       return;
     }
 
@@ -39,26 +75,23 @@ export function CreateVideoForm() {
     router.refresh();
   }
 
+  const isBusy = stage !== "idle";
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
-        <label htmlFor="originalUrl" className="text-sm font-medium">
-          Video URL
+        <label htmlFor="videoFile" className="text-sm font-medium">
+          Video file
         </label>
         <input
-          id="originalUrl"
-          name="originalUrl"
-          type="url"
+          id="videoFile"
+          name="videoFile"
+          type="file"
+          accept="video/*"
           required
-          placeholder="https://cdn.example.com/my-video.mp4"
-          value={originalUrl}
-          onChange={(e) => setOriginalUrl(e.target.value)}
+          onChange={(e) => setVideoFile(e.target.files?.[0] ?? null)}
           className="rounded-md border border-black/15 px-3 py-2 dark:border-white/15 dark:bg-transparent"
         />
-        <p className="text-xs text-black/50 dark:text-white/50">
-          There's no upload/transcoding pipeline yet — paste a direct link to an
-          already-hosted video file.
-        </p>
       </div>
 
       <div className="flex flex-col gap-1.5">
@@ -112,10 +145,14 @@ export function CreateVideoForm() {
 
       <button
         type="submit"
-        disabled={isSubmitting}
+        disabled={isBusy}
         className="mt-2 rounded-md bg-black py-2 text-white disabled:opacity-50 dark:bg-white dark:text-black"
       >
-        {isSubmitting ? "Publishing…" : "Publish"}
+        {stage === "uploading"
+          ? "Uploading…"
+          : stage === "publishing"
+            ? "Publishing…"
+            : "Publish"}
       </button>
     </form>
   );
