@@ -199,3 +199,11 @@ func (r *PostgresRepository) AdminListReports(ctx context.Context, arg AdminList
 func (r *PostgresRepository) AdminUpdateReportStatus(ctx context.Context, arg AdminUpdateReportStatusParams) (Report, error) {
 	return r.queries.AdminUpdateReportStatus(ctx, arg)
 }
+
+func (r *PostgresRepository) UpsertWatchHistory(ctx context.Context, arg UpsertWatchHistoryParams) (WatchHistory, error) {
+	return r.queries.UpsertWatchHistory(ctx, arg)
+}
+
+func (r *PostgresRepository) ListWatchHistory(ctx context.Context, arg ListWatchHistoryParams) ([]Video, error) {
+	return r.queries.ListWatchHistory(ctx, arg)
+}

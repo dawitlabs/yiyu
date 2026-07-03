@@ -16,10 +16,10 @@ type Repository interface {
 	CommentRepository
 	SubscriptionRepository
 	ReportRepository
+	WatchHistoryRepository
 	// ShareRepository
 	// FavouriteRepository
 	// WatchlistRepository
-	// HistoryRepository
 	// RecommendationRepository
 
 	// WithTx runs fn inside a single transaction, giving it access to every
@@ -88,6 +88,11 @@ type ReportRepository interface {
 	CreateReport(ctx context.Context, arg repository.CreateReportParams) (repository.Report, error)
 	AdminListReports(ctx context.Context, arg repository.AdminListReportsParams) ([]repository.AdminListReportsRow, error)
 	AdminUpdateReportStatus(ctx context.Context, arg repository.AdminUpdateReportStatusParams) (repository.Report, error)
+}
+
+type WatchHistoryRepository interface {
+	UpsertWatchHistory(ctx context.Context, arg repository.UpsertWatchHistoryParams) (repository.WatchHistory, error)
+	ListWatchHistory(ctx context.Context, arg repository.ListWatchHistoryParams) ([]repository.Video, error)
 }
 
 // Compile-time guard: PostgresRepository must satisfy Repository in full.

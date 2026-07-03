@@ -63,6 +63,7 @@ func main() {
 	comment := httpapi.NewCommentHandler(repo)
 	upload := httpapi.NewUploadHandler(storageClient)
 	subscription := httpapi.NewSubscriptionHandler(repo)
+	watchHistory := httpapi.NewWatchHistoryHandler(repo)
 
 	requireAuth := httpapi.RequireAuth(repo)
 	requireAdmin := func(h http.Handler) http.Handler {
@@ -110,6 +111,9 @@ func main() {
 	mux.Handle("DELETE /channels/{id}/subscribe", requireAuth(http.HandlerFunc(subscription.Unsubscribe)))
 	mux.Handle("GET /channels/{id}/subscription", requireAuth(http.HandlerFunc(subscription.GetSubscriptionStatus)))
 	mux.Handle("GET /feed/subscriptions", requireAuth(http.HandlerFunc(subscription.GetFeed)))
+
+	mux.Handle("POST /videos/{id}/progress", requireAuth(http.HandlerFunc(watchHistory.RecordProgress)))
+	mux.Handle("GET /history", requireAuth(http.HandlerFunc(watchHistory.ListHistory)))
 
 	log.Println("listening on :8082")
 	log.Fatal(http.ListenAndServe(":8082", mux))

@@ -60,10 +60,12 @@ type Querier interface {
 	ListPublicVideos(ctx context.Context, arg ListPublicVideosParams) ([]Video, error)
 	ListSubscriptionFeed(ctx context.Context, arg ListSubscriptionFeedParams) ([]Video, error)
 	ListVideosByChannel(ctx context.Context, arg ListVideosByChannelParams) ([]Video, error)
+	ListWatchHistory(ctx context.Context, arg ListWatchHistoryParams) ([]Video, error)
 	SearchVideos(ctx context.Context, arg SearchVideosParams) ([]Video, error)
 	UpdateChannel(ctx context.Context, arg UpdateChannelParams) (Channel, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 	UpdateVideoInteractionType(ctx context.Context, arg UpdateVideoInteractionTypeParams) (VideoInteraction, error)
+	UpsertWatchHistory(ctx context.Context, arg UpsertWatchHistoryParams) (WatchHistory, error)
 }
 
 var _ Querier = (*Queries)(nil)
