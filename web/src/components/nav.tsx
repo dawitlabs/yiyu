@@ -33,6 +33,12 @@ export function Nav({
         {user ? (
           <div className="flex items-center gap-4 text-sm">
             <Link
+              href="/subscriptions"
+              className="text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white"
+            >
+              Subscriptions
+            </Link>
+            <Link
               href={channel ? `/channel/${channel.handle}` : "/channel/new"}
               className="text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white"
             >
