@@ -18,6 +18,9 @@ import (
 type commentRepository interface {
 	ports.CommentRepository
 	ports.ReportRepository
+	ports.VideoRepository
+	ports.ChannelRepository
+	ports.NotificationRepository
 	WithTx(ctx context.Context, fn func(repository.Querier) error) error
 }
 
@@ -84,13 +87,14 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var parentID pgtype.UUID
+	var parent repository.Comment
 	if req.ParentID != "" {
 		parsed, err := uuid.Parse(req.ParentID)
 		if err != nil {
 			http.Error(w, "invalid parent_id", http.StatusBadRequest)
 			return
 		}
-		parent, err := h.repo.GetCommentByID(r.Context(), parsed)
+		parent, err = h.repo.GetCommentByID(r.Context(), parsed)
 		if err != nil {
 			http.Error(w, "parent comment not found", http.StatusNotFound)
 			return
@@ -103,10 +107,11 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	user, _ := UserFromContext(r.Context())
+	userPg := pgtype.UUID{Bytes: user.ID, Valid: true}
 
 	comment, err := h.repo.CreateComment(r.Context(), repository.CreateCommentParams{
 		VideoID:  pgtype.UUID{Bytes: videoID, Valid: true},
-		UserID:   pgtype.UUID{Bytes: user.ID, Valid: true},
+		UserID:   userPg,
 		Content:  req.Content,
 		ParentID: parentID,
 	})
@@ -116,7 +121,50 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	h.notifyOnComment(r.Context(), videoID, comment, parentID, parent, userPg)
+
 	writeJSON(w, http.StatusCreated, toCommentResponse(comment, user))
+}
+
+// notifyOnComment is best-effort: the comment itself already succeeded, so a
+// notification failure is logged and swallowed rather than failing the
+// request. A reply notifies the parent comment's author; a top-level
+// comment notifies the video's channel owner — neither fires if the actor
+// is notifying themselves.
+func (h *CommentHandler) notifyOnComment(ctx context.Context, videoID uuid.UUID, comment repository.Comment, parentID pgtype.UUID, parent repository.Comment, actorID pgtype.UUID) {
+	videoPg := pgtype.UUID{Bytes: videoID, Valid: true}
+	commentPg := pgtype.UUID{Bytes: comment.ID, Valid: true}
+
+	var recipient pgtype.UUID
+	notifType := "new_comment"
+	if parentID.Valid {
+		recipient = parent.UserID
+		notifType = "comment_reply"
+	} else {
+		video, err := h.repo.GetVideoByID(ctx, videoID)
+		if err != nil {
+			return
+		}
+		channel, err := h.repo.GetChannelByID(ctx, uuid.UUID(video.ChannelID.Bytes))
+		if err != nil {
+			return
+		}
+		recipient = channel.UserID
+	}
+
+	if !recipient.Valid || recipient.Bytes == actorID.Bytes {
+		return
+	}
+
+	if _, err := h.repo.CreateNotification(ctx, repository.CreateNotificationParams{
+		UserID:    recipient,
+		Type:      notifType,
+		ActorID:   actorID,
+		VideoID:   videoPg,
+		CommentID: commentPg,
+	}); err != nil {
+		log.Printf("create comment notification: %v", err)
+	}
 }
 
 func (h *CommentHandler) ListCommentsByVideo(w http.ResponseWriter, r *http.Request) {

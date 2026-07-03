@@ -19,6 +19,7 @@ import (
 // those two writes must not drift apart under concurrent requests.
 type subscriptionRepository interface {
 	ports.SubscriptionRepository
+	ports.ChannelRepository
 	WithTx(ctx context.Context, fn func(repository.Querier) error) error
 }
 
@@ -37,6 +38,12 @@ func (h *SubscriptionHandler) Subscribe(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	channel, err := h.repo.GetChannelByID(r.Context(), channelID)
+	if err != nil {
+		http.Error(w, "channel not found", http.StatusNotFound)
+		return
+	}
+
 	user, _ := UserFromContext(r.Context())
 	channelPg := pgtype.UUID{Bytes: channelID, Valid: true}
 	userPg := pgtype.UUID{Bytes: user.ID, Valid: true}
@@ -48,11 +55,22 @@ func (h *SubscriptionHandler) Subscribe(w http.ResponseWriter, r *http.Request) 
 		}); err != nil {
 			return err
 		}
-		_, err := q.AdjustChannelSubscriberCount(r.Context(), repository.AdjustChannelSubscriberCountParams{
+		if _, err := q.AdjustChannelSubscriberCount(r.Context(), repository.AdjustChannelSubscriberCountParams{
 			ID:    channelID,
 			Delta: 1,
-		})
-		return err
+		}); err != nil {
+			return err
+		}
+		if channel.UserID.Valid && channel.UserID.Bytes != user.ID {
+			if _, err := q.CreateNotification(r.Context(), repository.CreateNotificationParams{
+				UserID:  channel.UserID,
+				Type:    "new_subscriber",
+				ActorID: userPg,
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
 	})
 	if err != nil {
 		var pgErr *pgconn.PgError

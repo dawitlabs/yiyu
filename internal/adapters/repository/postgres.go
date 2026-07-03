@@ -251,3 +251,19 @@ func (r *PostgresRepository) ListPlaylistVideos(ctx context.Context, id uuid.UUI
 func (r *PostgresRepository) ListAllPlaylistsByChannel(ctx context.Context, arg ListAllPlaylistsByChannelParams) ([]Playlist, error) {
 	return r.queries.ListAllPlaylistsByChannel(ctx, arg)
 }
+
+func (r *PostgresRepository) CreateNotification(ctx context.Context, arg CreateNotificationParams) (Notification, error) {
+	return r.queries.CreateNotification(ctx, arg)
+}
+
+func (r *PostgresRepository) ListNotifications(ctx context.Context, arg ListNotificationsParams) ([]ListNotificationsRow, error) {
+	return r.queries.ListNotifications(ctx, arg)
+}
+
+func (r *PostgresRepository) CountUnreadNotifications(ctx context.Context, userID pgtype.UUID) (int64, error) {
+	return r.queries.CountUnreadNotifications(ctx, userID)
+}
+
+func (r *PostgresRepository) MarkNotificationRead(ctx context.Context, arg MarkNotificationReadParams) (Notification, error) {
+	return r.queries.MarkNotificationRead(ctx, arg)
+}

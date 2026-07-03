@@ -86,6 +86,17 @@ type CommentLike struct {
 	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
 }
 
+type Notification struct {
+	ID        uuid.UUID          `db:"id" json:"id"`
+	UserID    pgtype.UUID        `db:"user_id" json:"user_id"`
+	Type      string             `db:"type" json:"type"`
+	ActorID   pgtype.UUID        `db:"actor_id" json:"actor_id"`
+	VideoID   pgtype.UUID        `db:"video_id" json:"video_id"`
+	CommentID pgtype.UUID        `db:"comment_id" json:"comment_id"`
+	IsRead    pgtype.Bool        `db:"is_read" json:"is_read"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+}
+
 type Playlist struct {
 	ID          uuid.UUID          `db:"id" json:"id"`
 	ChannelID   pgtype.UUID        `db:"channel_id" json:"channel_id"`

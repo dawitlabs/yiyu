@@ -27,9 +27,11 @@ type Querier interface {
 	AdminUpdateUserRole(ctx context.Context, arg AdminUpdateUserRoleParams) (User, error)
 	ClaimNextPendingVideo(ctx context.Context) (Video, error)
 	CompleteVideoProcessing(ctx context.Context, arg CompleteVideoProcessingParams) (Video, error)
+	CountUnreadNotifications(ctx context.Context, userID pgtype.UUID) (int64, error)
 	CreateChannel(ctx context.Context, arg CreateChannelParams) (Channel, error)
 	CreateComment(ctx context.Context, arg CreateCommentParams) (Comment, error)
 	CreateCommentLike(ctx context.Context, arg CreateCommentLikeParams) error
+	CreateNotification(ctx context.Context, arg CreateNotificationParams) (Notification, error)
 	CreatePlaylist(ctx context.Context, arg CreatePlaylistParams) (Playlist, error)
 	CreateReport(ctx context.Context, arg CreateReportParams) (Report, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
@@ -72,6 +74,7 @@ type Querier interface {
 	// Top-level only (parent_id IS NULL) — replies are fetched separately via
 	// ListCommentReplies, not mixed flat into the same list.
 	ListCommentsByVideo(ctx context.Context, arg ListCommentsByVideoParams) ([]ListCommentsByVideoRow, error)
+	ListNotifications(ctx context.Context, arg ListNotificationsParams) ([]ListNotificationsRow, error)
 	ListPlaylistVideos(ctx context.Context, playlistID uuid.UUID) ([]Video, error)
 	ListPlaylistsByChannel(ctx context.Context, arg ListPlaylistsByChannelParams) ([]Playlist, error)
 	ListPublicVideos(ctx context.Context, arg ListPublicVideosParams) ([]Video, error)
@@ -81,6 +84,7 @@ type Querier interface {
 	ListSubscriptionFeed(ctx context.Context, arg ListSubscriptionFeedParams) ([]Video, error)
 	ListVideosByChannel(ctx context.Context, arg ListVideosByChannelParams) ([]Video, error)
 	ListWatchHistory(ctx context.Context, arg ListWatchHistoryParams) ([]Video, error)
+	MarkNotificationRead(ctx context.Context, arg MarkNotificationReadParams) (Notification, error)
 	RemoveVideoFromPlaylist(ctx context.Context, arg RemoveVideoFromPlaylistParams) error
 	SearchVideos(ctx context.Context, arg SearchVideosParams) ([]Video, error)
 	UpdateChannel(ctx context.Context, arg UpdateChannelParams) (Channel, error)
