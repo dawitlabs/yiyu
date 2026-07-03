@@ -19,13 +19,16 @@ type Querier interface {
 	AdminDeleteVideo(ctx context.Context, id uuid.UUID) error
 	AdminGetAllUsers(ctx context.Context, arg AdminGetAllUsersParams) ([]User, error)
 	AdminGetUserWithDeleted(ctx context.Context, id uuid.UUID) (User, error)
+	AdminListReports(ctx context.Context, arg AdminListReportsParams) ([]AdminListReportsRow, error)
 	AdminListVideos(ctx context.Context, arg AdminListVideosParams) ([]Video, error)
+	AdminUpdateReportStatus(ctx context.Context, arg AdminUpdateReportStatusParams) (Report, error)
 	// Optional useful admin queries:
 	AdminUpdateUserRole(ctx context.Context, arg AdminUpdateUserRoleParams) (User, error)
 	ClaimNextPendingVideo(ctx context.Context) (Video, error)
 	CompleteVideoProcessing(ctx context.Context, arg CompleteVideoProcessingParams) (Video, error)
 	CreateChannel(ctx context.Context, arg CreateChannelParams) (Channel, error)
 	CreateComment(ctx context.Context, arg CreateCommentParams) (Comment, error)
+	CreateReport(ctx context.Context, arg CreateReportParams) (Report, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateSubscription(ctx context.Context, arg CreateSubscriptionParams) (Subscription, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)

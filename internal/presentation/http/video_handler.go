@@ -22,7 +22,14 @@ import (
 type videoRepository interface {
 	ports.VideoRepository
 	ports.ChannelRepository
+	ports.ReportRepository
 	WithTx(ctx context.Context, fn func(repository.Querier) error) error
+}
+
+// reportRequest is shared between VideoHandler.ReportVideo and
+// CommentHandler.ReportComment.
+type reportRequest struct {
+	Reason string `json:"reason"`
 }
 
 type VideoHandler struct {
@@ -390,4 +397,41 @@ func (h *VideoHandler) SearchVideos(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, resp)
+}
+
+func (h *VideoHandler) ReportVideo(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "invalid video id", http.StatusBadRequest)
+		return
+	}
+
+	var req reportRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+	if req.Reason == "" {
+		http.Error(w, "reason is required", http.StatusBadRequest)
+		return
+	}
+
+	if _, err := h.repo.GetVideoByID(r.Context(), id); err != nil {
+		http.Error(w, "video not found", http.StatusNotFound)
+		return
+	}
+
+	user, _ := UserFromContext(r.Context())
+
+	if _, err := h.repo.CreateReport(r.Context(), repository.CreateReportParams{
+		ReporterID: pgtype.UUID{Bytes: user.ID, Valid: true},
+		VideoID:    pgtype.UUID{Bytes: id, Valid: true},
+		Reason:     req.Reason,
+	}); err != nil {
+		log.Printf("report video: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

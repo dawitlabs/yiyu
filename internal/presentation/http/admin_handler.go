@@ -15,6 +15,7 @@ import (
 type adminRepository interface {
 	authRepository
 	ports.VideoRepository
+	ports.ReportRepository
 }
 
 type AdminHandler struct {
@@ -169,4 +170,104 @@ func (h *AdminHandler) DeleteVideo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+type adminReportResponse struct {
+	ID               string    `json:"id"`
+	ReporterUsername string    `json:"reporter_username"`
+	VideoID          *string   `json:"video_id"`
+	VideoTitle       *string   `json:"video_title"`
+	CommentID        *string   `json:"comment_id"`
+	CommentContent   *string   `json:"comment_content"`
+	Reason           string    `json:"reason"`
+	Status           string    `json:"status"`
+	CreatedAt        time.Time `json:"created_at"`
+}
+
+func toAdminReportResponse(r repository.AdminListReportsRow) adminReportResponse {
+	resp := adminReportResponse{
+		ID:               r.ID.String(),
+		ReporterUsername: r.ReporterUsername,
+		Reason:           r.Reason,
+		Status:           r.Status.String,
+		CreatedAt:        r.CreatedAt.Time,
+	}
+	if r.VideoID.Valid {
+		id := uuid.UUID(r.VideoID.Bytes).String()
+		resp.VideoID = &id
+	}
+	if r.VideoTitle.Valid {
+		resp.VideoTitle = &r.VideoTitle.String
+	}
+	if r.CommentID.Valid {
+		id := uuid.UUID(r.CommentID.Bytes).String()
+		resp.CommentID = &id
+	}
+	if r.CommentContent.Valid {
+		resp.CommentContent = &r.CommentContent.String
+	}
+	return resp
+}
+
+func (h *AdminHandler) ListReports(w http.ResponseWriter, r *http.Request) {
+	limit, offset := parseLimitOffset(r)
+
+	reports, err := h.repo.AdminListReports(r.Context(), repository.AdminListReportsParams{
+		Limit:  limit,
+		Offset: offset,
+	})
+	if err != nil {
+		log.Printf("admin: list reports: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	resp := make([]adminReportResponse, len(reports))
+	for i, rep := range reports {
+		resp[i] = toAdminReportResponse(rep)
+	}
+
+	writeJSON(w, http.StatusOK, resp)
+}
+
+type updateReportStatusRequest struct {
+	Status string `json:"status"`
+}
+
+type reportStatusResponse struct {
+	ID     string `json:"id"`
+	Status string `json:"status"`
+}
+
+func (h *AdminHandler) UpdateReportStatus(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "invalid report id", http.StatusBadRequest)
+		return
+	}
+
+	var req updateReportStatusRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	switch req.Status {
+	case "pending", "reviewed", "dismissed":
+	default:
+		http.Error(w, "status must be one of: pending, reviewed, dismissed", http.StatusBadRequest)
+		return
+	}
+
+	report, err := h.repo.AdminUpdateReportStatus(r.Context(), repository.AdminUpdateReportStatusParams{
+		ID:     id,
+		Status: pgtype.Text{String: req.Status, Valid: true},
+	})
+	if err != nil {
+		log.Printf("admin: update report status: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, reportStatusResponse{ID: report.ID.String(), Status: report.Status.String})
 }

@@ -12,11 +12,16 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type CommentHandler struct {
-	repo ports.CommentRepository
+type commentRepository interface {
+	ports.CommentRepository
+	ports.ReportRepository
 }
 
-func NewCommentHandler(repo ports.CommentRepository) *CommentHandler {
+type CommentHandler struct {
+	repo commentRepository
+}
+
+func NewCommentHandler(repo commentRepository) *CommentHandler {
 	return &CommentHandler{repo: repo}
 }
 
@@ -134,6 +139,43 @@ func (h *CommentHandler) DeleteComment(w http.ResponseWriter, r *http.Request) {
 
 	if err := h.repo.DeleteComment(r.Context(), id); err != nil {
 		log.Printf("delete comment: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *CommentHandler) ReportComment(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "invalid comment id", http.StatusBadRequest)
+		return
+	}
+
+	var req reportRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+	if req.Reason == "" {
+		http.Error(w, "reason is required", http.StatusBadRequest)
+		return
+	}
+
+	if _, err := h.repo.GetCommentByID(r.Context(), id); err != nil {
+		http.Error(w, "comment not found", http.StatusNotFound)
+		return
+	}
+
+	user, _ := UserFromContext(r.Context())
+
+	if _, err := h.repo.CreateReport(r.Context(), repository.CreateReportParams{
+		ReporterID: pgtype.UUID{Bytes: user.ID, Valid: true},
+		CommentID:  pgtype.UUID{Bytes: id, Valid: true},
+		Reason:     req.Reason,
+	}); err != nil {
+		log.Printf("report comment: %v", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}

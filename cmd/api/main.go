@@ -80,6 +80,8 @@ func main() {
 	mux.Handle("PATCH /admin/users/{id}/role", requireAdmin(http.HandlerFunc(admin.UpdateUserRole)))
 	mux.Handle("GET /admin/videos", requireAdmin(http.HandlerFunc(admin.ListVideos)))
 	mux.Handle("DELETE /admin/videos/{id}", requireAdmin(http.HandlerFunc(admin.DeleteVideo)))
+	mux.Handle("GET /admin/reports", requireAdmin(http.HandlerFunc(admin.ListReports)))
+	mux.Handle("PATCH /admin/reports/{id}", requireAdmin(http.HandlerFunc(admin.UpdateReportStatus)))
 
 	mux.Handle("POST /channels", requireAuth(http.HandlerFunc(channel.CreateChannel)))
 	mux.Handle("GET /channels/me", requireAuth(http.HandlerFunc(channel.GetMyChannel)))
@@ -89,6 +91,7 @@ func main() {
 	mux.Handle("POST /videos", requireAuth(http.HandlerFunc(video.CreateVideo)))
 	mux.HandleFunc("GET /videos", video.ListPublicVideos)
 	mux.HandleFunc("GET /videos/{id}", video.GetVideoByID)
+	mux.Handle("POST /videos/{id}/report", requireAuth(http.HandlerFunc(video.ReportVideo)))
 	mux.HandleFunc("POST /videos/{id}/view", video.RecordView)
 	mux.Handle("POST /videos/{id}/like", requireAuth(http.HandlerFunc(video.LikeVideo)))
 	mux.Handle("POST /videos/{id}/dislike", requireAuth(http.HandlerFunc(video.DislikeVideo)))
@@ -99,6 +102,7 @@ func main() {
 	mux.Handle("POST /videos/{id}/comments", requireAuth(http.HandlerFunc(comment.CreateComment)))
 	mux.HandleFunc("GET /videos/{id}/comments", comment.ListCommentsByVideo)
 	mux.Handle("DELETE /comments/{id}", requireAuth(http.HandlerFunc(comment.DeleteComment)))
+	mux.Handle("POST /comments/{id}/report", requireAuth(http.HandlerFunc(comment.ReportComment)))
 
 	mux.Handle("POST /uploads/presign", requireAuth(http.HandlerFunc(upload.PresignUpload)))
 

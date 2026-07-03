@@ -15,6 +15,7 @@ type Repository interface {
 	ChannelRepository
 	CommentRepository
 	SubscriptionRepository
+	ReportRepository
 	// ShareRepository
 	// FavouriteRepository
 	// WatchlistRepository
@@ -81,6 +82,12 @@ type CommentRepository interface {
 type SubscriptionRepository interface {
 	GetSubscription(ctx context.Context, arg repository.GetSubscriptionParams) (repository.Subscription, error)
 	ListSubscriptionFeed(ctx context.Context, arg repository.ListSubscriptionFeedParams) ([]repository.Video, error)
+}
+
+type ReportRepository interface {
+	CreateReport(ctx context.Context, arg repository.CreateReportParams) (repository.Report, error)
+	AdminListReports(ctx context.Context, arg repository.AdminListReportsParams) ([]repository.AdminListReportsRow, error)
+	AdminUpdateReportStatus(ctx context.Context, arg repository.AdminUpdateReportStatusParams) (repository.Report, error)
 }
 
 // Compile-time guard: PostgresRepository must satisfy Repository in full.

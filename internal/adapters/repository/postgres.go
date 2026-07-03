@@ -187,3 +187,15 @@ func (r *PostgresRepository) GetSubscription(ctx context.Context, arg GetSubscri
 func (r *PostgresRepository) ListSubscriptionFeed(ctx context.Context, arg ListSubscriptionFeedParams) ([]Video, error) {
 	return r.queries.ListSubscriptionFeed(ctx, arg)
 }
+
+func (r *PostgresRepository) CreateReport(ctx context.Context, arg CreateReportParams) (Report, error) {
+	return r.queries.CreateReport(ctx, arg)
+}
+
+func (r *PostgresRepository) AdminListReports(ctx context.Context, arg AdminListReportsParams) ([]AdminListReportsRow, error) {
+	return r.queries.AdminListReports(ctx, arg)
+}
+
+func (r *PostgresRepository) AdminUpdateReportStatus(ctx context.Context, arg AdminUpdateReportStatusParams) (Report, error) {
+	return r.queries.AdminUpdateReportStatus(ctx, arg)
+}
