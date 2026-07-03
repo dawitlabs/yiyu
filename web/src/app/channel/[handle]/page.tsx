@@ -56,12 +56,20 @@ export default async function ChannelPage({
           )}
         </div>
         {isOwner ? (
-          <Link
-            href="/upload"
-            className="rounded-md bg-black px-3 py-1.5 text-sm text-white dark:bg-white dark:text-black"
-          >
-            Upload video
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href="/channel/edit"
+              className="rounded-md border border-black/15 px-3 py-1.5 text-sm dark:border-white/15"
+            >
+              Edit channel
+            </Link>
+            <Link
+              href="/upload"
+              className="rounded-md bg-black px-3 py-1.5 text-sm text-white dark:bg-white dark:text-black"
+            >
+              Upload video
+            </Link>
+          </div>
         ) : (
           user && (
             <SubscribeButton
