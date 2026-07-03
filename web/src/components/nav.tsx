@@ -30,6 +30,16 @@ export function Nav({
           yiyu
         </Link>
 
+        <form action="/search" method="get" className="mx-4 flex-1 max-w-md">
+          <input
+            type="search"
+            name="q"
+            placeholder="Search"
+            aria-label="Search videos"
+            className="w-full rounded-md border border-black/15 px-3 py-1.5 text-sm dark:border-white/15 dark:bg-transparent"
+          />
+        </form>
+
         {user ? (
           <div className="flex items-center gap-4 text-sm">
             <Link
