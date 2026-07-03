@@ -9,8 +9,16 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/dawitlabs/yiyu/internal/adapters/repository"
+	"github.com/dawitlabs/yiyu/internal/pkg/storage"
 	httpapi "github.com/dawitlabs/yiyu/internal/presentation/http"
 )
+
+func getEnv(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
+}
 
 func main() {
 	ctx := context.Background()
@@ -35,12 +43,25 @@ func main() {
 
 	log.Println("connected to database")
 
+	storageClient, err := storage.New(storage.Config{
+		Endpoint:   getEnv("STORAGE_ENDPOINT", "localhost:9002"),
+		AccessKey:  getEnv("STORAGE_ACCESS_KEY", "dawit"),
+		SecretKey:  getEnv("STORAGE_SECRET_KEY", "dawitdawit"),
+		Bucket:     getEnv("STORAGE_BUCKET", "yiyu-videos"),
+		PublicBase: getEnv("STORAGE_PUBLIC_BASE_URL", "http://localhost:9002/yiyu-videos"),
+		UseSSL:     os.Getenv("STORAGE_USE_SSL") == "true",
+	})
+	if err != nil {
+		log.Fatalf("init storage client: %v", err)
+	}
+
 	repo := repository.NewPostgresRepository(pool)
 	auth := httpapi.NewAuthHandler(repo)
 	admin := httpapi.NewAdminHandler(repo)
 	channel := httpapi.NewChannelHandler(repo)
 	video := httpapi.NewVideoHandler(repo)
 	comment := httpapi.NewCommentHandler(repo)
+	upload := httpapi.NewUploadHandler(storageClient)
 
 	requireAuth := httpapi.RequireAuth(repo)
 	requireAdmin := func(h http.Handler) http.Handler {
@@ -74,6 +95,8 @@ func main() {
 	mux.Handle("POST /videos/{id}/comments", requireAuth(http.HandlerFunc(comment.CreateComment)))
 	mux.HandleFunc("GET /videos/{id}/comments", comment.ListCommentsByVideo)
 	mux.Handle("DELETE /comments/{id}", requireAuth(http.HandlerFunc(comment.DeleteComment)))
+
+	mux.Handle("POST /uploads/presign", requireAuth(http.HandlerFunc(upload.PresignUpload)))
 
 	log.Println("listening on :8082")
 	log.Fatal(http.ListenAndServe(":8082", mux))

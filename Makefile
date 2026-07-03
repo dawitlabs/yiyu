@@ -1,7 +1,7 @@
 DB_DSN := postgres://dawit:dawit@localhost:55432/yiyu?sslmode=disable
 
 docker-up:
-	docker-compose up -d postgres
+	docker-compose up -d
 
 docker-down:
 	docker-compose down
@@ -16,7 +16,7 @@ migrate-status:
 	goose -dir ./migrations postgres "$(DB_DSN)" status
 
 setup-db:
-	docker-compose up -d postgres
+	docker-compose up -d
 	sleep 3
 	make migrate-up
 

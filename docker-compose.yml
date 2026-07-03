@@ -11,5 +11,32 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    container_name: yiyu-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: dawit
+      MINIO_ROOT_PASSWORD: dawitdawit
+    ports:
+      - "9002:9000" # S3 API
+      - "9003:9001" # web console
+    volumes:
+      - minio_data:/data
+    restart: unless-stopped
+
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      until mc alias set local http://minio:9000 dawit dawitdawit; do sleep 1; done;
+      mc mb --ignore-existing local/yiyu-videos;
+      mc anonymous set download local/yiyu-videos;
+      "
+
 volumes:
   postgres_data:
+  minio_data:
