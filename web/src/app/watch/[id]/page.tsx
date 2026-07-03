@@ -3,6 +3,7 @@ import { AddToPlaylist } from "@/components/add-to-playlist";
 import { CommentSection } from "@/components/comment-section";
 import { ReactionButtons } from "@/components/reaction-buttons";
 import { ReportButton } from "@/components/report-button";
+import { VideoGrid } from "@/components/video-grid";
 import { VideoPlayer } from "@/components/video-player";
 import { serverFetch } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
@@ -18,9 +19,10 @@ export default async function WatchPage({
 }) {
   const { id } = await params;
 
-  const [res, commentsRes, user, myChannel] = await Promise.all([
+  const [res, commentsRes, relatedRes, user, myChannel] = await Promise.all([
     serverFetch(`/videos/${id}`),
     serverFetch(`/videos/${id}/comments`),
+    serverFetch(`/videos/${id}/related`),
     getCurrentUser(),
     getMyChannel(),
   ]);
@@ -30,6 +32,7 @@ export default async function WatchPage({
 
   const video: Video = await res.json();
   const comments: Comment[] = commentsRes.ok ? await commentsRes.json() : [];
+  const relatedVideos: Video[] = relatedRes.ok ? await relatedRes.json() : [];
 
   let myPlaylists: Playlist[] = [];
   if (myChannel) {
@@ -96,6 +99,17 @@ export default async function WatchPage({
         currentUserId={user?.id ?? null}
         currentUserRole={user?.role ?? null}
       />
+
+      {relatedVideos.length > 0 && (
+        <div className="mt-10">
+          <h2 className="text-lg font-semibold tracking-tight">
+            Related videos
+          </h2>
+          <div className="mt-4">
+            <VideoGrid videos={relatedVideos} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
