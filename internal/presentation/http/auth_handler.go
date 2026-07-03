@@ -53,6 +53,7 @@ type userResponse struct {
 	ID       string `json:"id"`
 	Username string `json:"username"`
 	Email    string `json:"email"`
+	Role     string `json:"role"`
 }
 
 func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
@@ -103,6 +104,7 @@ func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 		ID:       user.ID.String(),
 		Username: user.Username,
 		Email:    user.Email,
+		Role:     string(user.Role),
 	})
 }
 
@@ -137,6 +139,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 		ID:       user.ID.String(),
 		Username: user.Username,
 		Email:    user.Email,
+		Role:     string(user.Role),
 	})
 }
 
@@ -151,6 +154,7 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 		ID:       user.ID.String(),
 		Username: user.Username,
 		Email:    user.Email,
+		Role:     string(user.Role),
 	})
 }
 
