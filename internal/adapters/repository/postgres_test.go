@@ -236,15 +236,34 @@ func TestPostgresRepository_Video(t *testing.T) {
 		t.Errorf("Title = %q, want %q", got.Title, created.Title)
 	}
 
-	updated, err := repo.UpdateVideoStatus(ctx, UpdateVideoStatusParams{
-		ID:     created.ID,
-		Status: "ready",
+	claimed, err := repo.ClaimNextPendingVideo(ctx)
+	if err != nil {
+		t.Fatalf("ClaimNextPendingVideo() error = %v", err)
+	}
+	if claimed.ID != created.ID {
+		t.Fatalf("ClaimNextPendingVideo() claimed %v, want %v", claimed.ID, created.ID)
+	}
+	if claimed.Status != "transcoding" {
+		t.Errorf("Status after claim = %q, want %q", claimed.Status, "transcoding")
+	}
+
+	completed, err := repo.CompleteVideoProcessing(ctx, CompleteVideoProcessingParams{
+		ID:             created.ID,
+		HlsPlaylistUrl: pgtype.Text{String: "https://cdn.example.com/hls/playlist.m3u8", Valid: true},
+		ThumbnailUrl:   pgtype.Text{String: "https://cdn.example.com/thumb.jpg", Valid: true},
+		Duration:       pgtype.Int4{Int32: 42, Valid: true},
 	})
 	if err != nil {
-		t.Fatalf("UpdateVideoStatus() error = %v", err)
+		t.Fatalf("CompleteVideoProcessing() error = %v", err)
 	}
-	if updated.Status != "ready" {
-		t.Errorf("Status = %q, want %q", updated.Status, "ready")
+	if completed.Status != "ready" {
+		t.Errorf("Status = %q, want %q", completed.Status, "ready")
+	}
+	if completed.Duration.Int32 != 42 {
+		t.Errorf("Duration = %d, want 42", completed.Duration.Int32)
+	}
+	if completed.ThumbnailUrl.String != "https://cdn.example.com/thumb.jpg" {
+		t.Errorf("ThumbnailUrl = %q, want %q", completed.ThumbnailUrl.String, "https://cdn.example.com/thumb.jpg")
 	}
 
 	viewed, err := repo.IncrementVideoViews(ctx, created.ID)

@@ -84,8 +84,11 @@ type createVideoRequest struct {
 }
 
 // CreateVideo creates a video "by URL" — the caller already has a hosted,
-// playable file. There's no upload/transcoding pipeline yet, so status goes
-// straight to "ready" instead of "processing".
+// playable file. Status starts as "processing": the worker (cmd/worker)
+// picks it up, extracts duration, generates a thumbnail if none was given,
+// and produces an HLS rendition. The original_url stays playable the whole
+// time, so this never blocks watching the video — it only adds hls_playlist_url
+// and duration once the worker finishes.
 func (h *VideoHandler) CreateVideo(w http.ResponseWriter, r *http.Request) {
 	var req createVideoRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -119,7 +122,7 @@ func (h *VideoHandler) CreateVideo(w http.ResponseWriter, r *http.Request) {
 		ChannelID:    pgtype.UUID{Bytes: channel.ID, Valid: true},
 		Title:        req.Title,
 		Description:  pgtype.Text{String: req.Description, Valid: req.Description != ""},
-		Status:       "ready",
+		Status:       "processing",
 		Visibility:   visibility,
 		Category:     pgtype.Text{String: req.Category, Valid: req.Category != ""},
 		Tags:         req.Tags,

@@ -9,8 +9,30 @@ SELECT * FROM videos WHERE id = $1;
 -- name: ListVideosByChannel :many
 SELECT * FROM videos WHERE channel_id = $1 ORDER BY uploaded_at DESC LIMIT $2 OFFSET $3;
 
--- name: UpdateVideoStatus :one
-UPDATE videos SET status = $2, hls_playlist_url = $3, thumbnail_url = $4, updated_at = NOW() WHERE id = $1 RETURNING *;
+-- name: ClaimNextPendingVideo :one
+UPDATE videos
+SET status = 'transcoding'
+WHERE id = (
+    SELECT id FROM videos
+    WHERE status = 'processing'
+    ORDER BY uploaded_at ASC
+    FOR UPDATE SKIP LOCKED
+    LIMIT 1
+)
+RETURNING *;
+
+-- name: CompleteVideoProcessing :one
+UPDATE videos
+SET status = 'ready',
+    hls_playlist_url = $2,
+    thumbnail_url = COALESCE(NULLIF(thumbnail_url, ''), $3),
+    duration = $4,
+    updated_at = NOW()
+WHERE id = $1
+RETURNING *;
+
+-- name: FailVideoProcessing :exec
+UPDATE videos SET status = 'failed', updated_at = NOW() WHERE id = $1;
 
 -- name: IncrementVideoViews :one
 UPDATE videos SET views_count = views_count + 1 WHERE id = $1 RETURNING *;

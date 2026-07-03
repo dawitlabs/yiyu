@@ -22,6 +22,8 @@ type Querier interface {
 	AdminListVideos(ctx context.Context, arg AdminListVideosParams) ([]Video, error)
 	// Optional useful admin queries:
 	AdminUpdateUserRole(ctx context.Context, arg AdminUpdateUserRoleParams) (User, error)
+	ClaimNextPendingVideo(ctx context.Context) (Video, error)
+	CompleteVideoProcessing(ctx context.Context, arg CompleteVideoProcessingParams) (Video, error)
 	CreateChannel(ctx context.Context, arg CreateChannelParams) (Channel, error)
 	CreateComment(ctx context.Context, arg CreateCommentParams) (Comment, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
@@ -35,6 +37,7 @@ type Querier interface {
 	DeleteUser(ctx context.Context, arg DeleteUserParams) (User, error)
 	DeleteUserSessions(ctx context.Context, userID uuid.UUID) error
 	DeleteVideoInteraction(ctx context.Context, arg DeleteVideoInteractionParams) error
+	FailVideoProcessing(ctx context.Context, id uuid.UUID) error
 	GetChannelByHandle(ctx context.Context, handle string) (Channel, error)
 	GetChannelByID(ctx context.Context, id uuid.UUID) (Channel, error)
 	GetChannelByUserID(ctx context.Context, userID pgtype.UUID) (Channel, error)
@@ -58,7 +61,6 @@ type Querier interface {
 	UpdateChannel(ctx context.Context, arg UpdateChannelParams) (Channel, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 	UpdateVideoInteractionType(ctx context.Context, arg UpdateVideoInteractionTypeParams) (VideoInteraction, error)
-	UpdateVideoStatus(ctx context.Context, arg UpdateVideoStatusParams) (Video, error)
 }
 
 var _ Querier = (*Queries)(nil)

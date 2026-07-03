@@ -72,6 +72,96 @@ func (q *Queries) AdminListVideos(ctx context.Context, arg AdminListVideosParams
 	return items, nil
 }
 
+const claimNextPendingVideo = `-- name: ClaimNextPendingVideo :one
+UPDATE videos
+SET status = 'transcoding'
+WHERE id = (
+    SELECT id FROM videos
+    WHERE status = 'processing'
+    ORDER BY uploaded_at ASC
+    FOR UPDATE SKIP LOCKED
+    LIMIT 1
+)
+RETURNING id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration
+`
+
+func (q *Queries) ClaimNextPendingVideo(ctx context.Context) (Video, error) {
+	row := q.db.QueryRow(ctx, claimNextPendingVideo)
+	var i Video
+	err := row.Scan(
+		&i.ID,
+		&i.ChannelID,
+		&i.Title,
+		&i.Description,
+		&i.Status,
+		&i.Visibility,
+		&i.ViewsCount,
+		&i.LikesCount,
+		&i.DislikesCount,
+		&i.ThumbnailUrl,
+		&i.OriginalUrl,
+		&i.HlsPlaylistUrl,
+		&i.Category,
+		&i.Tags,
+		&i.UploadedAt,
+		&i.PublishedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Duration,
+	)
+	return i, err
+}
+
+const completeVideoProcessing = `-- name: CompleteVideoProcessing :one
+UPDATE videos
+SET status = 'ready',
+    hls_playlist_url = $2,
+    thumbnail_url = COALESCE(NULLIF(thumbnail_url, ''), $3),
+    duration = $4,
+    updated_at = NOW()
+WHERE id = $1
+RETURNING id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration
+`
+
+type CompleteVideoProcessingParams struct {
+	ID             uuid.UUID   `db:"id" json:"id"`
+	HlsPlaylistUrl pgtype.Text `db:"hls_playlist_url" json:"hls_playlist_url"`
+	ThumbnailUrl   pgtype.Text `db:"thumbnail_url" json:"thumbnail_url"`
+	Duration       pgtype.Int4 `db:"duration" json:"duration"`
+}
+
+func (q *Queries) CompleteVideoProcessing(ctx context.Context, arg CompleteVideoProcessingParams) (Video, error) {
+	row := q.db.QueryRow(ctx, completeVideoProcessing,
+		arg.ID,
+		arg.HlsPlaylistUrl,
+		arg.ThumbnailUrl,
+		arg.Duration,
+	)
+	var i Video
+	err := row.Scan(
+		&i.ID,
+		&i.ChannelID,
+		&i.Title,
+		&i.Description,
+		&i.Status,
+		&i.Visibility,
+		&i.ViewsCount,
+		&i.LikesCount,
+		&i.DislikesCount,
+		&i.ThumbnailUrl,
+		&i.OriginalUrl,
+		&i.HlsPlaylistUrl,
+		&i.Category,
+		&i.Tags,
+		&i.UploadedAt,
+		&i.PublishedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Duration,
+	)
+	return i, err
+}
+
 const createVideo = `-- name: CreateVideo :one
 INSERT INTO videos (channel_id, title, description, duration, status, visibility, category, tags, original_url, thumbnail_url)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
@@ -127,6 +217,15 @@ func (q *Queries) CreateVideo(ctx context.Context, arg CreateVideoParams) (Video
 		&i.Duration,
 	)
 	return i, err
+}
+
+const failVideoProcessing = `-- name: FailVideoProcessing :exec
+UPDATE videos SET status = 'failed', updated_at = NOW() WHERE id = $1
+`
+
+func (q *Queries) FailVideoProcessing(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, failVideoProcessing, id)
+	return err
 }
 
 const getVideoByID = `-- name: GetVideoByID :one
@@ -409,47 +508,4 @@ func (q *Queries) SearchVideos(ctx context.Context, arg SearchVideosParams) ([]V
 		return nil, err
 	}
 	return items, nil
-}
-
-const updateVideoStatus = `-- name: UpdateVideoStatus :one
-UPDATE videos SET status = $2, hls_playlist_url = $3, thumbnail_url = $4, updated_at = NOW() WHERE id = $1 RETURNING id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration
-`
-
-type UpdateVideoStatusParams struct {
-	ID             uuid.UUID   `db:"id" json:"id"`
-	Status         string      `db:"status" json:"status"`
-	HlsPlaylistUrl pgtype.Text `db:"hls_playlist_url" json:"hls_playlist_url"`
-	ThumbnailUrl   pgtype.Text `db:"thumbnail_url" json:"thumbnail_url"`
-}
-
-func (q *Queries) UpdateVideoStatus(ctx context.Context, arg UpdateVideoStatusParams) (Video, error) {
-	row := q.db.QueryRow(ctx, updateVideoStatus,
-		arg.ID,
-		arg.Status,
-		arg.HlsPlaylistUrl,
-		arg.ThumbnailUrl,
-	)
-	var i Video
-	err := row.Scan(
-		&i.ID,
-		&i.ChannelID,
-		&i.Title,
-		&i.Description,
-		&i.Status,
-		&i.Visibility,
-		&i.ViewsCount,
-		&i.LikesCount,
-		&i.DislikesCount,
-		&i.ThumbnailUrl,
-		&i.OriginalUrl,
-		&i.HlsPlaylistUrl,
-		&i.Category,
-		&i.Tags,
-		&i.UploadedAt,
-		&i.PublishedAt,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.Duration,
-	)
-	return i, err
 }

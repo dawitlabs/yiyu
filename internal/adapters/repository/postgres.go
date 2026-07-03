@@ -100,8 +100,16 @@ func (r *PostgresRepository) ListVideosByChannel(ctx context.Context, arg ListVi
 	return r.queries.ListVideosByChannel(ctx, arg)
 }
 
-func (r *PostgresRepository) UpdateVideoStatus(ctx context.Context, arg UpdateVideoStatusParams) (Video, error) {
-	return r.queries.UpdateVideoStatus(ctx, arg)
+func (r *PostgresRepository) ClaimNextPendingVideo(ctx context.Context) (Video, error) {
+	return r.queries.ClaimNextPendingVideo(ctx)
+}
+
+func (r *PostgresRepository) CompleteVideoProcessing(ctx context.Context, arg CompleteVideoProcessingParams) (Video, error) {
+	return r.queries.CompleteVideoProcessing(ctx, arg)
+}
+
+func (r *PostgresRepository) FailVideoProcessing(ctx context.Context, id uuid.UUID) error {
+	return r.queries.FailVideoProcessing(ctx, id)
 }
 
 func (r *PostgresRepository) IncrementVideoViews(ctx context.Context, id uuid.UUID) (Video, error) {

@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	"fmt"
+	"io"
 	"time"
 
 	"github.com/minio/minio-go/v7"
@@ -45,4 +46,17 @@ func (c *Client) PresignUpload(ctx context.Context, key string, expires time.Dur
 		return "", "", err
 	}
 	return u.String(), fmt.Sprintf("%s/%s", c.publicBase, key), nil
+}
+
+// Upload writes bytes to storage directly — used server-side (the worker),
+// as opposed to PresignUpload which hands the browser a URL to PUT to
+// itself.
+func (c *Client) Upload(ctx context.Context, key string, r io.Reader, size int64, contentType string) (publicURL string, err error) {
+	_, err = c.minio.PutObject(ctx, c.bucket, key, r, size, minio.PutObjectOptions{
+		ContentType: contentType,
+	})
+	if err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%s/%s", c.publicBase, key), nil
 }

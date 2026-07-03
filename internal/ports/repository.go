@@ -50,7 +50,6 @@ type VideoRepository interface {
 	CreateVideo(ctx context.Context, arg repository.CreateVideoParams) (repository.Video, error)
 	GetVideoByID(ctx context.Context, id uuid.UUID) (repository.Video, error)
 	ListVideosByChannel(ctx context.Context, arg repository.ListVideosByChannelParams) ([]repository.Video, error)
-	UpdateVideoStatus(ctx context.Context, arg repository.UpdateVideoStatusParams) (repository.Video, error)
 	IncrementVideoViews(ctx context.Context, id uuid.UUID) (repository.Video, error)
 	IncrementVideoLikes(ctx context.Context, id uuid.UUID) (repository.Video, error)
 	IncrementVideoDislikes(ctx context.Context, id uuid.UUID) (repository.Video, error)
@@ -59,6 +58,9 @@ type VideoRepository interface {
 	SearchVideos(ctx context.Context, arg repository.SearchVideosParams) ([]repository.Video, error)
 	AdminListVideos(ctx context.Context, arg repository.AdminListVideosParams) ([]repository.Video, error)
 	AdminDeleteVideo(ctx context.Context, id uuid.UUID) error
+	ClaimNextPendingVideo(ctx context.Context) (repository.Video, error)
+	CompleteVideoProcessing(ctx context.Context, arg repository.CompleteVideoProcessingParams) (repository.Video, error)
+	FailVideoProcessing(ctx context.Context, id uuid.UUID) error
 }
 
 type ChannelRepository interface {
