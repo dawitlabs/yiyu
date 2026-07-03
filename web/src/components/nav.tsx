@@ -49,6 +49,12 @@ export function Nav({
               Subscriptions
             </Link>
             <Link
+              href="/history"
+              className="text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white"
+            >
+              History
+            </Link>
+            <Link
               href={channel ? `/channel/${channel.handle}` : "/channel/new"}
               className="text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white"
             >

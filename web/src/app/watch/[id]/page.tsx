@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { CommentSection } from "@/components/comment-section";
 import { ReactionButtons } from "@/components/reaction-buttons";
 import { ReportButton } from "@/components/report-button";
-import { ViewRecorder } from "@/components/view-recorder";
+import { VideoPlayer } from "@/components/video-player";
 import { serverFetch } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
 import type { Comment } from "@/lib/comments";
@@ -39,10 +39,12 @@ export default async function WatchPage({
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
-      <ViewRecorder videoId={video.id} />
       <div className="aspect-video overflow-hidden rounded-lg bg-black">
-        {/* biome-ignore lint/a11y/useMediaCaption: no captions/transcripts available yet for user-provided video URLs */}
-        <video src={video.original_url} controls className="h-full w-full" />
+        <VideoPlayer
+          videoId={video.id}
+          src={video.original_url}
+          canRecordHistory={user !== null}
+        />
       </div>
 
       <h1 className="mt-4 text-xl font-semibold tracking-tight">
