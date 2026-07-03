@@ -1,6 +1,7 @@
 "use client";
 
 import { type SubmitEvent, useState } from "react";
+import { ReportButton } from "@/components/report-button";
 import type { Comment } from "@/lib/comments";
 
 export function CommentSection({
@@ -95,16 +96,25 @@ export function CommentSection({
                   {comment.content}
                 </p>
               </div>
-              {canDelete && (
-                <button
-                  type="button"
-                  disabled={pendingDeleteId === comment.id}
-                  onClick={() => handleDelete(comment.id)}
-                  className="shrink-0 text-xs text-red-600 hover:underline disabled:opacity-50 dark:text-red-400"
-                >
-                  Delete
-                </button>
-              )}
+              <div className="flex shrink-0 items-center gap-3 text-xs">
+                {currentUserId && currentUserId !== comment.author.id && (
+                  <ReportButton
+                    targetType="comments"
+                    targetId={comment.id}
+                    className="text-black/60 hover:underline disabled:opacity-50 dark:text-white/60"
+                  />
+                )}
+                {canDelete && (
+                  <button
+                    type="button"
+                    disabled={pendingDeleteId === comment.id}
+                    onClick={() => handleDelete(comment.id)}
+                    className="text-red-600 hover:underline disabled:opacity-50 dark:text-red-400"
+                  >
+                    Delete
+                  </button>
+                )}
+              </div>
             </div>
           );
         })}

@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { CommentSection } from "@/components/comment-section";
 import { ReactionButtons } from "@/components/reaction-buttons";
+import { ReportButton } from "@/components/report-button";
 import { ViewRecorder } from "@/components/view-recorder";
 import { serverFetch } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
@@ -63,6 +64,11 @@ export default async function WatchPage({
         <p className="mt-3 whitespace-pre-wrap text-black/80 dark:text-white/80">
           {video.description}
         </p>
+      )}
+      {user && (
+        <div className="mt-3">
+          <ReportButton targetType="videos" targetId={video.id} />
+        </div>
       )}
 
       <CommentSection
