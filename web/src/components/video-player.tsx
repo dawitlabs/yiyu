@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import type { Caption } from "@/lib/captions";
 
 // Owns the <video> element so it can hook play/ended directly — view
 // recording and watch-history progress both need real playback events,
@@ -9,10 +10,12 @@ export function VideoPlayer({
   videoId,
   src,
   canRecordHistory,
+  captions = [],
 }: {
   videoId: string;
   src: string;
   canRecordHistory: boolean;
+  captions?: Caption[];
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hasStarted = useRef(false);
@@ -46,7 +49,7 @@ export function VideoPlayer({
   }
 
   return (
-    // biome-ignore lint/a11y/useMediaCaption: no captions/transcripts available yet for user-provided video URLs
+    // biome-ignore lint/a11y/useMediaCaption: tracks come from a dynamic captions array; biome can't verify one is always present, but real videos with caption tracks uploaded do have one
     <video
       ref={videoRef}
       src={src}
@@ -54,6 +57,17 @@ export function VideoPlayer({
       onPlay={handlePlay}
       onEnded={handleEnded}
       className="h-full w-full"
-    />
+    >
+      {captions.map((c) => (
+        <track
+          key={c.id}
+          kind="subtitles"
+          src={c.url}
+          srcLang={c.language}
+          label={c.label}
+          default={c.is_default}
+        />
+      ))}
+    </video>
   );
 }

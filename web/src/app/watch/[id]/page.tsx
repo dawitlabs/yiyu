@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { AddToPlaylist } from "@/components/add-to-playlist";
+import { CaptionManager } from "@/components/caption-manager";
 import { CommentSection } from "@/components/comment-section";
 import { ReactionButtons } from "@/components/reaction-buttons";
 import { ReportButton } from "@/components/report-button";
@@ -7,6 +8,7 @@ import { VideoGrid } from "@/components/video-grid";
 import { VideoPlayer } from "@/components/video-player";
 import { serverFetch } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
+import type { Caption } from "@/lib/captions";
 import type { Comment } from "@/lib/comments";
 import { getMyChannel } from "@/lib/my-channel";
 import type { Playlist } from "@/lib/playlists";
@@ -19,13 +21,15 @@ export default async function WatchPage({
 }) {
   const { id } = await params;
 
-  const [res, commentsRes, relatedRes, user, myChannel] = await Promise.all([
-    serverFetch(`/videos/${id}`),
-    serverFetch(`/videos/${id}/comments`),
-    serverFetch(`/videos/${id}/related`),
-    getCurrentUser(),
-    getMyChannel(),
-  ]);
+  const [res, commentsRes, relatedRes, captionsRes, user, myChannel] =
+    await Promise.all([
+      serverFetch(`/videos/${id}`),
+      serverFetch(`/videos/${id}/comments`),
+      serverFetch(`/videos/${id}/related`),
+      serverFetch(`/videos/${id}/captions`),
+      getCurrentUser(),
+      getMyChannel(),
+    ]);
   if (!res.ok) {
     notFound();
   }
@@ -33,6 +37,8 @@ export default async function WatchPage({
   const video: Video = await res.json();
   const comments: Comment[] = commentsRes.ok ? await commentsRes.json() : [];
   const relatedVideos: Video[] = relatedRes.ok ? await relatedRes.json() : [];
+  const captions: Caption[] = captionsRes.ok ? await captionsRes.json() : [];
+  const isOwner = myChannel?.id === video.channel_id;
 
   let myPlaylists: Playlist[] = [];
   if (myChannel) {
@@ -61,8 +67,13 @@ export default async function WatchPage({
           videoId={video.id}
           src={video.original_url}
           canRecordHistory={user !== null}
+          captions={captions}
         />
       </div>
+
+      {isOwner && (
+        <CaptionManager videoId={video.id} initialCaptions={captions} />
+      )}
 
       <h1 className="mt-4 text-xl font-semibold tracking-tight">
         {video.title}
