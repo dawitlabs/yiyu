@@ -28,6 +28,7 @@ type Querier interface {
 	ClaimNextPendingVideo(ctx context.Context) (Video, error)
 	CompleteVideoProcessing(ctx context.Context, arg CompleteVideoProcessingParams) (Video, error)
 	CountUnreadNotifications(ctx context.Context, userID pgtype.UUID) (int64, error)
+	CreateCaption(ctx context.Context, arg CreateCaptionParams) (VideoCaption, error)
 	CreateChannel(ctx context.Context, arg CreateChannelParams) (Channel, error)
 	CreateComment(ctx context.Context, arg CreateCommentParams) (Comment, error)
 	CreateCommentLike(ctx context.Context, arg CreateCommentLikeParams) error
@@ -40,6 +41,7 @@ type Querier interface {
 	CreateVideo(ctx context.Context, arg CreateVideoParams) (Video, error)
 	CreateVideoInteraction(ctx context.Context, arg CreateVideoInteractionParams) (VideoInteraction, error)
 	DecrementCommentLikes(ctx context.Context, id uuid.UUID) (Comment, error)
+	DeleteCaption(ctx context.Context, id uuid.UUID) error
 	DeleteComment(ctx context.Context, id uuid.UUID) error
 	DeleteCommentLike(ctx context.Context, arg DeleteCommentLikeParams) error
 	DeletePlaylist(ctx context.Context, id uuid.UUID) error
@@ -49,6 +51,7 @@ type Querier interface {
 	DeleteUserSessions(ctx context.Context, userID uuid.UUID) error
 	DeleteVideoInteraction(ctx context.Context, arg DeleteVideoInteractionParams) error
 	FailVideoProcessing(ctx context.Context, id uuid.UUID) error
+	GetCaptionByID(ctx context.Context, id uuid.UUID) (VideoCaption, error)
 	GetChannelByHandle(ctx context.Context, handle string) (Channel, error)
 	GetChannelByID(ctx context.Context, id uuid.UUID) (Channel, error)
 	GetChannelByUserID(ctx context.Context, userID pgtype.UUID) (Channel, error)
@@ -70,6 +73,7 @@ type Querier interface {
 	// Same as ListPlaylistsByChannel but includes private playlists — only
 	// meant to be used once the caller is confirmed as the channel's owner.
 	ListAllPlaylistsByChannel(ctx context.Context, arg ListAllPlaylistsByChannelParams) ([]Playlist, error)
+	ListCaptionsByVideo(ctx context.Context, videoID pgtype.UUID) ([]VideoCaption, error)
 	ListCommentReplies(ctx context.Context, arg ListCommentRepliesParams) ([]ListCommentRepliesRow, error)
 	// Top-level only (parent_id IS NULL) — replies are fetched separately via
 	// ListCommentReplies, not mixed flat into the same list.

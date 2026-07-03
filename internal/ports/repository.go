@@ -19,6 +19,7 @@ type Repository interface {
 	WatchHistoryRepository
 	PlaylistRepository
 	NotificationRepository
+	CaptionRepository
 
 	// WithTx runs fn inside a single transaction, giving it access to every
 	// query method (repository.Querier is the full sqlc-generated set) —
@@ -112,6 +113,13 @@ type NotificationRepository interface {
 	ListNotifications(ctx context.Context, arg repository.ListNotificationsParams) ([]repository.ListNotificationsRow, error)
 	CountUnreadNotifications(ctx context.Context, userID pgtype.UUID) (int64, error)
 	MarkNotificationRead(ctx context.Context, arg repository.MarkNotificationReadParams) (repository.Notification, error)
+}
+
+type CaptionRepository interface {
+	CreateCaption(ctx context.Context, arg repository.CreateCaptionParams) (repository.VideoCaption, error)
+	GetCaptionByID(ctx context.Context, id uuid.UUID) (repository.VideoCaption, error)
+	ListCaptionsByVideo(ctx context.Context, videoID pgtype.UUID) ([]repository.VideoCaption, error)
+	DeleteCaption(ctx context.Context, id uuid.UUID) error
 }
 
 // Compile-time guard: PostgresRepository must satisfy Repository in full.

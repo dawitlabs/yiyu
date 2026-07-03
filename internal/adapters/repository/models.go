@@ -176,6 +176,16 @@ type Video struct {
 	Duration       pgtype.Int4        `db:"duration" json:"duration"`
 }
 
+type VideoCaption struct {
+	ID        uuid.UUID          `db:"id" json:"id"`
+	VideoID   pgtype.UUID        `db:"video_id" json:"video_id"`
+	Language  string             `db:"language" json:"language"`
+	Label     string             `db:"label" json:"label"`
+	Url       string             `db:"url" json:"url"`
+	IsDefault pgtype.Bool        `db:"is_default" json:"is_default"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+}
+
 type VideoFile struct {
 	ID         uuid.UUID          `db:"id" json:"id"`
 	VideoID    pgtype.UUID        `db:"video_id" json:"video_id"`

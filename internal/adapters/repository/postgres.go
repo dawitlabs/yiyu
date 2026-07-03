@@ -267,3 +267,19 @@ func (r *PostgresRepository) CountUnreadNotifications(ctx context.Context, userI
 func (r *PostgresRepository) MarkNotificationRead(ctx context.Context, arg MarkNotificationReadParams) (Notification, error) {
 	return r.queries.MarkNotificationRead(ctx, arg)
 }
+
+func (r *PostgresRepository) CreateCaption(ctx context.Context, arg CreateCaptionParams) (VideoCaption, error) {
+	return r.queries.CreateCaption(ctx, arg)
+}
+
+func (r *PostgresRepository) GetCaptionByID(ctx context.Context, id uuid.UUID) (VideoCaption, error) {
+	return r.queries.GetCaptionByID(ctx, id)
+}
+
+func (r *PostgresRepository) ListCaptionsByVideo(ctx context.Context, videoID pgtype.UUID) ([]VideoCaption, error) {
+	return r.queries.ListCaptionsByVideo(ctx, videoID)
+}
+
+func (r *PostgresRepository) DeleteCaption(ctx context.Context, id uuid.UUID) error {
+	return r.queries.DeleteCaption(ctx, id)
+}
