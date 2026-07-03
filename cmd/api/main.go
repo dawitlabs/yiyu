@@ -64,8 +64,10 @@ func main() {
 	upload := httpapi.NewUploadHandler(storageClient)
 	subscription := httpapi.NewSubscriptionHandler(repo)
 	watchHistory := httpapi.NewWatchHistoryHandler(repo)
+	playlist := httpapi.NewPlaylistHandler(repo)
 
 	requireAuth := httpapi.RequireAuth(repo)
+	optionalAuth := httpapi.OptionalAuth(repo)
 	requireAdmin := func(h http.Handler) http.Handler {
 		return requireAuth(httpapi.RequireAdmin(h))
 	}
@@ -114,6 +116,13 @@ func main() {
 
 	mux.Handle("POST /videos/{id}/progress", requireAuth(http.HandlerFunc(watchHistory.RecordProgress)))
 	mux.Handle("GET /history", requireAuth(http.HandlerFunc(watchHistory.ListHistory)))
+
+	mux.Handle("POST /playlists", requireAuth(http.HandlerFunc(playlist.CreatePlaylist)))
+	mux.HandleFunc("GET /channels/{handle}/playlists", playlist.ListPlaylistsByChannel)
+	mux.Handle("GET /playlists/{id}", optionalAuth(http.HandlerFunc(playlist.GetPlaylist)))
+	mux.Handle("DELETE /playlists/{id}", requireAuth(http.HandlerFunc(playlist.DeletePlaylist)))
+	mux.Handle("POST /playlists/{id}/videos", requireAuth(http.HandlerFunc(playlist.AddVideo)))
+	mux.Handle("DELETE /playlists/{id}/videos/{videoId}", requireAuth(http.HandlerFunc(playlist.RemoveVideo)))
 
 	log.Println("listening on :8082")
 	log.Fatal(http.ListenAndServe(":8082", mux))

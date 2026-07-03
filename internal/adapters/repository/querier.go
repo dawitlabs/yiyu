@@ -12,6 +12,7 @@ import (
 )
 
 type Querier interface {
+	AddVideoToPlaylist(ctx context.Context, arg AddVideoToPlaylistParams) (PlaylistVideo, error)
 	AdjustChannelSubscriberCount(ctx context.Context, arg AdjustChannelSubscriberCountParams) (Channel, error)
 	AdjustVideoReactionCounts(ctx context.Context, arg AdjustVideoReactionCountsParams) (Video, error)
 	// ==================== ADMIN QUERIES ====================
@@ -28,6 +29,7 @@ type Querier interface {
 	CompleteVideoProcessing(ctx context.Context, arg CompleteVideoProcessingParams) (Video, error)
 	CreateChannel(ctx context.Context, arg CreateChannelParams) (Channel, error)
 	CreateComment(ctx context.Context, arg CreateCommentParams) (Comment, error)
+	CreatePlaylist(ctx context.Context, arg CreatePlaylistParams) (Playlist, error)
 	CreateReport(ctx context.Context, arg CreateReportParams) (Report, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
 	CreateSubscription(ctx context.Context, arg CreateSubscriptionParams) (Subscription, error)
@@ -35,6 +37,7 @@ type Querier interface {
 	CreateVideo(ctx context.Context, arg CreateVideoParams) (Video, error)
 	CreateVideoInteraction(ctx context.Context, arg CreateVideoInteractionParams) (VideoInteraction, error)
 	DeleteComment(ctx context.Context, id uuid.UUID) error
+	DeletePlaylist(ctx context.Context, id uuid.UUID) error
 	DeleteSession(ctx context.Context, tokenHash string) error
 	DeleteSubscription(ctx context.Context, arg DeleteSubscriptionParams) error
 	DeleteUser(ctx context.Context, arg DeleteUserParams) (User, error)
@@ -45,6 +48,7 @@ type Querier interface {
 	GetChannelByID(ctx context.Context, id uuid.UUID) (Channel, error)
 	GetChannelByUserID(ctx context.Context, userID pgtype.UUID) (Channel, error)
 	GetCommentByID(ctx context.Context, id uuid.UUID) (Comment, error)
+	GetPlaylistByID(ctx context.Context, id uuid.UUID) (Playlist, error)
 	GetSessionWithUser(ctx context.Context, tokenHash string) (GetSessionWithUserRow, error)
 	GetSubscription(ctx context.Context, arg GetSubscriptionParams) (Subscription, error)
 	GetUserByEmail(ctx context.Context, email string) (User, error)
@@ -57,10 +61,13 @@ type Querier interface {
 	IncrementVideoLikes(ctx context.Context, id uuid.UUID) (Video, error)
 	IncrementVideoViews(ctx context.Context, id uuid.UUID) (Video, error)
 	ListCommentsByVideo(ctx context.Context, arg ListCommentsByVideoParams) ([]ListCommentsByVideoRow, error)
+	ListPlaylistVideos(ctx context.Context, playlistID uuid.UUID) ([]Video, error)
+	ListPlaylistsByChannel(ctx context.Context, arg ListPlaylistsByChannelParams) ([]Playlist, error)
 	ListPublicVideos(ctx context.Context, arg ListPublicVideosParams) ([]Video, error)
 	ListSubscriptionFeed(ctx context.Context, arg ListSubscriptionFeedParams) ([]Video, error)
 	ListVideosByChannel(ctx context.Context, arg ListVideosByChannelParams) ([]Video, error)
 	ListWatchHistory(ctx context.Context, arg ListWatchHistoryParams) ([]Video, error)
+	RemoveVideoFromPlaylist(ctx context.Context, arg RemoveVideoFromPlaylistParams) error
 	SearchVideos(ctx context.Context, arg SearchVideosParams) ([]Video, error)
 	UpdateChannel(ctx context.Context, arg UpdateChannelParams) (Channel, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)

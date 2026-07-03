@@ -17,9 +17,7 @@ type Repository interface {
 	SubscriptionRepository
 	ReportRepository
 	WatchHistoryRepository
-	// ShareRepository
-	// FavouriteRepository
-	// WatchlistRepository
+	PlaylistRepository
 	// RecommendationRepository
 
 	// WithTx runs fn inside a single transaction, giving it access to every
@@ -93,6 +91,16 @@ type ReportRepository interface {
 type WatchHistoryRepository interface {
 	UpsertWatchHistory(ctx context.Context, arg repository.UpsertWatchHistoryParams) (repository.WatchHistory, error)
 	ListWatchHistory(ctx context.Context, arg repository.ListWatchHistoryParams) ([]repository.Video, error)
+}
+
+type PlaylistRepository interface {
+	CreatePlaylist(ctx context.Context, arg repository.CreatePlaylistParams) (repository.Playlist, error)
+	GetPlaylistByID(ctx context.Context, id uuid.UUID) (repository.Playlist, error)
+	ListPlaylistsByChannel(ctx context.Context, arg repository.ListPlaylistsByChannelParams) ([]repository.Playlist, error)
+	DeletePlaylist(ctx context.Context, id uuid.UUID) error
+	AddVideoToPlaylist(ctx context.Context, arg repository.AddVideoToPlaylistParams) (repository.PlaylistVideo, error)
+	RemoveVideoFromPlaylist(ctx context.Context, arg repository.RemoveVideoFromPlaylistParams) error
+	ListPlaylistVideos(ctx context.Context, id uuid.UUID) ([]repository.Video, error)
 }
 
 // Compile-time guard: PostgresRepository must satisfy Repository in full.

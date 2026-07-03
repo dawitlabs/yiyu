@@ -38,6 +38,31 @@ func RequireAuth(repo authRepository) func(http.Handler) http.Handler {
 	}
 }
 
+// OptionalAuth attaches the caller's user to the context if they have a
+// valid session, but never rejects the request when they don't — for
+// routes that are public but behave differently for a logged-in caller
+// (e.g. a private playlist, visible to its owner but 404 to anyone else).
+func OptionalAuth(repo authRepository) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			cookie, err := r.Cookie(sessionCookieName)
+			if err != nil {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			row, err := repo.GetSessionWithUser(r.Context(), session.Hash(cookie.Value))
+			if err != nil {
+				next.ServeHTTP(w, r)
+				return
+			}
+
+			ctx := context.WithValue(r.Context(), userContextKey, row.User)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		})
+	}
+}
+
 // RequireAdmin must run after RequireAuth — it reads the user RequireAuth
 // already put on the context, it doesn't authenticate on its own.
 func RequireAdmin(next http.Handler) http.Handler {

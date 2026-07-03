@@ -207,3 +207,31 @@ func (r *PostgresRepository) UpsertWatchHistory(ctx context.Context, arg UpsertW
 func (r *PostgresRepository) ListWatchHistory(ctx context.Context, arg ListWatchHistoryParams) ([]Video, error) {
 	return r.queries.ListWatchHistory(ctx, arg)
 }
+
+func (r *PostgresRepository) CreatePlaylist(ctx context.Context, arg CreatePlaylistParams) (Playlist, error) {
+	return r.queries.CreatePlaylist(ctx, arg)
+}
+
+func (r *PostgresRepository) GetPlaylistByID(ctx context.Context, id uuid.UUID) (Playlist, error) {
+	return r.queries.GetPlaylistByID(ctx, id)
+}
+
+func (r *PostgresRepository) ListPlaylistsByChannel(ctx context.Context, arg ListPlaylistsByChannelParams) ([]Playlist, error) {
+	return r.queries.ListPlaylistsByChannel(ctx, arg)
+}
+
+func (r *PostgresRepository) DeletePlaylist(ctx context.Context, id uuid.UUID) error {
+	return r.queries.DeletePlaylist(ctx, id)
+}
+
+func (r *PostgresRepository) AddVideoToPlaylist(ctx context.Context, arg AddVideoToPlaylistParams) (PlaylistVideo, error) {
+	return r.queries.AddVideoToPlaylist(ctx, arg)
+}
+
+func (r *PostgresRepository) RemoveVideoFromPlaylist(ctx context.Context, arg RemoveVideoFromPlaylistParams) error {
+	return r.queries.RemoveVideoFromPlaylist(ctx, arg)
+}
+
+func (r *PostgresRepository) ListPlaylistVideos(ctx context.Context, id uuid.UUID) ([]Video, error) {
+	return r.queries.ListPlaylistVideos(ctx, id)
+}
