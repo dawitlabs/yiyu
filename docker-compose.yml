@@ -19,6 +19,9 @@ services:
     environment:
       MINIO_ROOT_USER: dawit
       MINIO_ROOT_PASSWORD: dawitdawit
+      # Per-bucket CORS (mc cors set) is an AIStor-only (paid) feature.
+      # Open-source MinIO only supports this cluster-wide env var instead.
+      MINIO_API_CORS_ALLOW_ORIGIN: "*"
     ports:
       - "9002:9000" # S3 API
       - "9003:9001" # web console
