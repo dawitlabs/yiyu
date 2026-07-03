@@ -33,6 +33,12 @@ export function Nav({ user }: { user: User }) {
           >
             Videos
           </Link>
+          <Link
+            href="/reports"
+            className="text-sm text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white"
+          >
+            Reports
+          </Link>
         </div>
 
         <div className="flex items-center gap-4 text-sm">
