@@ -1,7 +1,7 @@
 package httpapi
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -64,7 +64,7 @@ func (h *NotificationHandler) ListNotifications(w http.ResponseWriter, r *http.R
 		Offset: offset,
 	})
 	if err != nil {
-		log.Printf("list notifications: %v", err)
+		slog.Error("list notifications", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -82,7 +82,7 @@ func (h *NotificationHandler) UnreadCount(w http.ResponseWriter, r *http.Request
 
 	count, err := h.repo.CountUnreadNotifications(r.Context(), pgtype.UUID{Bytes: user.ID, Valid: true})
 	if err != nil {
-		log.Printf("count unread notifications: %v", err)
+		slog.Error("count unread notifications", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log"
+	"log/slog"
 	"os"
 	"time"
 
@@ -24,6 +25,8 @@ func getEnv(key, fallback string) string {
 }
 
 func main() {
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
+
 	ctx := context.Background()
 
 	dsn := os.Getenv("DATABASE_URL")
@@ -60,7 +63,7 @@ func main() {
 	for {
 		processed, err := processNext(ctx, repo, storageClient)
 		if err != nil {
-			log.Printf("process next video: %v", err)
+			slog.Error("process next video", "error", err)
 		}
 		if !processed {
 			time.Sleep(pollInterval)
@@ -80,16 +83,16 @@ func processNext(ctx context.Context, repo *repository.PostgresRepository, store
 		return false, err
 	}
 
-	log.Printf("processing video %s (%q)", video.ID, video.Title)
+	slog.Info("processing video", "video_id", video.ID, "title", video.Title)
 
 	if err := transcode(ctx, repo, store, video); err != nil {
-		log.Printf("video %s failed: %v", video.ID, err)
+		slog.Error("video processing failed", "video_id", video.ID, "error", err)
 		if failErr := repo.FailVideoProcessing(ctx, video.ID); failErr != nil {
-			log.Printf("mark video %s failed: %v", video.ID, failErr)
+			slog.Error("mark video failed", "video_id", video.ID, "error", failErr)
 		}
 		return true, nil
 	}
 
-	log.Printf("video %s ready", video.ID)
+	slog.Info("video ready", "video_id", video.ID)
 	return true, nil
 }

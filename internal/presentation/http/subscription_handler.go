@@ -3,7 +3,7 @@ package httpapi
 import (
 	"context"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/dawitlabs/yiyu/internal/adapters/repository"
@@ -78,7 +78,7 @@ func (h *SubscriptionHandler) Subscribe(w http.ResponseWriter, r *http.Request) 
 			http.Error(w, "already subscribed", http.StatusConflict)
 			return
 		}
-		log.Printf("subscribe: %v", err)
+		slog.Error("subscribe", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -121,7 +121,7 @@ func (h *SubscriptionHandler) Unsubscribe(w http.ResponseWriter, r *http.Request
 			http.Error(w, "not subscribed", http.StatusNotFound)
 			return
 		}
-		log.Printf("unsubscribe: %v", err)
+		slog.Error("unsubscribe", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -160,7 +160,7 @@ func (h *SubscriptionHandler) GetFeed(w http.ResponseWriter, r *http.Request) {
 		Offset: offset,
 	})
 	if err != nil {
-		log.Printf("subscription feed: %v", err)
+		slog.Error("subscription feed", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}

@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -116,7 +116,7 @@ func (h *CommentHandler) CreateComment(w http.ResponseWriter, r *http.Request) {
 		ParentID: parentID,
 	})
 	if err != nil {
-		log.Printf("create comment: %v", err)
+		slog.Error("create comment", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -163,7 +163,7 @@ func (h *CommentHandler) notifyOnComment(ctx context.Context, videoID uuid.UUID,
 		VideoID:   videoPg,
 		CommentID: commentPg,
 	}); err != nil {
-		log.Printf("create comment notification: %v", err)
+		slog.Error("create comment notification", "error", err)
 	}
 }
 
@@ -182,7 +182,7 @@ func (h *CommentHandler) ListCommentsByVideo(w http.ResponseWriter, r *http.Requ
 		Offset:  offset,
 	})
 	if err != nil {
-		log.Printf("list comments: %v", err)
+		slog.Error("list comments", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -210,7 +210,7 @@ func (h *CommentHandler) ListReplies(w http.ResponseWriter, r *http.Request) {
 		Offset:   offset,
 	})
 	if err != nil {
-		log.Printf("list comment replies: %v", err)
+		slog.Error("list comment replies", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -276,7 +276,7 @@ func (h *CommentHandler) LikeComment(w http.ResponseWriter, r *http.Request) {
 		}
 	})
 	if err != nil {
-		log.Printf("like comment: %v", err)
+		slog.Error("like comment", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -302,7 +302,7 @@ func (h *CommentHandler) GetMyCommentLike(w http.ResponseWriter, r *http.Request
 		return
 	}
 	if err != nil {
-		log.Printf("get comment like: %v", err)
+		slog.Error("get comment like", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -334,7 +334,7 @@ func (h *CommentHandler) DeleteComment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.repo.DeleteComment(r.Context(), id); err != nil {
-		log.Printf("delete comment: %v", err)
+		slog.Error("delete comment", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -371,7 +371,7 @@ func (h *CommentHandler) ReportComment(w http.ResponseWriter, r *http.Request) {
 		CommentID:  pgtype.UUID{Bytes: id, Valid: true},
 		Reason:     req.Reason,
 	}); err != nil {
-		log.Printf("report comment: %v", err)
+		slog.Error("report comment", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}

@@ -2,7 +2,7 @@ package httpapi
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -54,7 +54,7 @@ func (h *AdminHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 		Offset: offset,
 	})
 	if err != nil {
-		log.Printf("admin: list users: %v", err)
+		slog.Error("admin: list users", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -80,14 +80,14 @@ func (h *AdminHandler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		ID:        id,
 		DeletedBy: pgtype.UUID{Bytes: admin.ID, Valid: true},
 	}); err != nil {
-		log.Printf("admin: delete user: %v", err)
+		slog.Error("admin: delete user", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
 	// Ban takes effect immediately, not after the token happens to expire.
 	if err := h.repo.DeleteUserSessions(r.Context(), id); err != nil {
-		log.Printf("admin: delete user sessions: %v", err)
+		slog.Error("admin: delete user sessions", "error", err)
 	}
 
 	w.WriteHeader(http.StatusNoContent)
@@ -123,7 +123,7 @@ func (h *AdminHandler) UpdateUserRole(w http.ResponseWriter, r *http.Request) {
 		Role: role,
 	})
 	if err != nil {
-		log.Printf("admin: update user role: %v", err)
+		slog.Error("admin: update user role", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -139,7 +139,7 @@ func (h *AdminHandler) ListVideos(w http.ResponseWriter, r *http.Request) {
 		Offset: offset,
 	})
 	if err != nil {
-		log.Printf("admin: list videos: %v", err)
+		slog.Error("admin: list videos", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -164,7 +164,7 @@ func (h *AdminHandler) DeleteVideo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.repo.AdminDeleteVideo(r.Context(), id); err != nil {
-		log.Printf("admin: delete video: %v", err)
+		slog.Error("admin: delete video", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -217,7 +217,7 @@ func (h *AdminHandler) ListReports(w http.ResponseWriter, r *http.Request) {
 		Offset: offset,
 	})
 	if err != nil {
-		log.Printf("admin: list reports: %v", err)
+		slog.Error("admin: list reports", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -264,7 +264,7 @@ func (h *AdminHandler) UpdateReportStatus(w http.ResponseWriter, r *http.Request
 		Status: pgtype.Text{String: req.Status, Valid: true},
 	})
 	if err != nil {
-		log.Printf("admin: update report status: %v", err)
+		slog.Error("admin: update report status", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}

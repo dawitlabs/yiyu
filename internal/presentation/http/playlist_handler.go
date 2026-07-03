@@ -2,7 +2,7 @@ package httpapi
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -94,7 +94,7 @@ func (h *PlaylistHandler) CreatePlaylist(w http.ResponseWriter, r *http.Request)
 		IsPublic:    pgtype.Bool{Bool: isPublic, Valid: true},
 	})
 	if err != nil {
-		log.Printf("create playlist: %v", err)
+		slog.Error("create playlist", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -134,7 +134,7 @@ func (h *PlaylistHandler) ListPlaylistsByChannel(w http.ResponseWriter, r *http.
 		})
 	}
 	if err != nil {
-		log.Printf("list playlists: %v", err)
+		slog.Error("list playlists", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -175,7 +175,7 @@ func (h *PlaylistHandler) GetPlaylist(w http.ResponseWriter, r *http.Request) {
 
 	videos, err := h.repo.ListPlaylistVideos(r.Context(), id)
 	if err != nil {
-		log.Printf("list playlist videos: %v", err)
+		slog.Error("list playlist videos", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -211,7 +211,7 @@ func (h *PlaylistHandler) DeletePlaylist(w http.ResponseWriter, r *http.Request)
 	}
 
 	if err := h.repo.DeletePlaylist(r.Context(), id); err != nil {
-		log.Printf("delete playlist: %v", err)
+		slog.Error("delete playlist", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -262,7 +262,7 @@ func (h *PlaylistHandler) AddVideo(w http.ResponseWriter, r *http.Request) {
 		PlaylistID: id,
 		VideoID:    videoID,
 	}); err != nil {
-		log.Printf("add video to playlist: %v", err)
+		slog.Error("add video to playlist", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -298,7 +298,7 @@ func (h *PlaylistHandler) RemoveVideo(w http.ResponseWriter, r *http.Request) {
 		PlaylistID: id,
 		VideoID:    videoID,
 	}); err != nil {
-		log.Printf("remove video from playlist: %v", err)
+		slog.Error("remove video from playlist", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}

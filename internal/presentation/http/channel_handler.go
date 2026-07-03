@@ -3,7 +3,7 @@ package httpapi
 import (
 	"encoding/json"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -83,7 +83,7 @@ func (h *ChannelHandler) CreateChannel(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
-		log.Printf("create channel: %v", err)
+		slog.Error("create channel", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -157,7 +157,7 @@ func (h *ChannelHandler) UpdateChannel(w http.ResponseWriter, r *http.Request) {
 		BannerUrl:   pgtype.Text{String: req.BannerUrl, Valid: req.BannerUrl != ""},
 	})
 	if err != nil {
-		log.Printf("update channel: %v", err)
+		slog.Error("update channel", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}

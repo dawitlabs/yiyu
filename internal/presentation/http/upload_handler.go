@@ -2,7 +2,7 @@ package httpapi
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 	"path/filepath"
 	"regexp"
@@ -53,7 +53,7 @@ func (h *UploadHandler) PresignUpload(w http.ResponseWriter, r *http.Request) {
 
 	uploadURL, publicURL, err := h.storage.PresignUpload(r.Context(), key, presignExpiry)
 	if err != nil {
-		log.Printf("presign upload: %v", err)
+		slog.Error("presign upload", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}

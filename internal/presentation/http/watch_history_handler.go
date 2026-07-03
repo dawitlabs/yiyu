@@ -2,7 +2,7 @@ package httpapi
 
 import (
 	"encoding/json"
-	"log"
+	"log/slog"
 	"net/http"
 
 	"github.com/dawitlabs/yiyu/internal/adapters/repository"
@@ -45,7 +45,7 @@ func (h *WatchHistoryHandler) RecordProgress(w http.ResponseWriter, r *http.Requ
 		Progress:  pgtype.Int4{Int32: req.Progress, Valid: true},
 		Completed: pgtype.Bool{Bool: req.Completed, Valid: true},
 	}); err != nil {
-		log.Printf("record watch progress: %v", err)
+		slog.Error("record watch progress", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -63,7 +63,7 @@ func (h *WatchHistoryHandler) ListHistory(w http.ResponseWriter, r *http.Request
 		Offset: offset,
 	})
 	if err != nil {
-		log.Printf("list watch history: %v", err)
+		slog.Error("list watch history", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}

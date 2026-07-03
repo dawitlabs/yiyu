@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"time"
@@ -137,7 +137,7 @@ func (h *VideoHandler) CreateVideo(w http.ResponseWriter, r *http.Request) {
 		ThumbnailUrl: pgtype.Text{String: req.ThumbnailUrl, Valid: req.ThumbnailUrl != ""},
 	})
 	if err != nil {
-		log.Printf("create video: %v", err)
+		slog.Error("create video", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -186,7 +186,7 @@ func (h *VideoHandler) ListRelatedVideos(w http.ResponseWriter, r *http.Request)
 		Limit:     limit,
 	})
 	if err != nil {
-		log.Printf("list related videos: %v", err)
+		slog.Error("list related videos", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -231,7 +231,7 @@ func (h *VideoHandler) ListVideosByChannel(w http.ResponseWriter, r *http.Reques
 		Offset:    offset,
 	})
 	if err != nil {
-		log.Printf("list videos by channel: %v", err)
+		slog.Error("list videos by channel", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -252,7 +252,7 @@ func (h *VideoHandler) ListPublicVideos(w http.ResponseWriter, r *http.Request) 
 		Offset: offset,
 	})
 	if err != nil {
-		log.Printf("list public videos: %v", err)
+		slog.Error("list public videos", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -360,7 +360,7 @@ func (h *VideoHandler) react(w http.ResponseWriter, r *http.Request, reactionTyp
 		return adjustErr
 	})
 	if err != nil {
-		log.Printf("react to video: %v", err)
+		slog.Error("react to video", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -398,7 +398,7 @@ func (h *VideoHandler) GetMyReaction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		log.Printf("get video interaction: %v", err)
+		slog.Error("get video interaction", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -421,7 +421,7 @@ func (h *VideoHandler) SearchVideos(w http.ResponseWriter, r *http.Request) {
 		Offset:             offset,
 	})
 	if err != nil {
-		log.Printf("search videos: %v", err)
+		slog.Error("search videos", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -463,7 +463,7 @@ func (h *VideoHandler) ReportVideo(w http.ResponseWriter, r *http.Request) {
 		VideoID:    pgtype.UUID{Bytes: id, Valid: true},
 		Reason:     req.Reason,
 	}); err != nil {
-		log.Printf("report video: %v", err)
+		slog.Error("report video", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}

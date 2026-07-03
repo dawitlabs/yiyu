@@ -3,7 +3,7 @@ package httpapi
 import (
 	"encoding/json"
 	"errors"
-	"log"
+	"log/slog"
 	"net/http"
 	"time"
 
@@ -70,7 +70,7 @@ func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 
 	hash, err := password.Hash(req.Password)
 	if err != nil {
-		log.Printf("signup: hash password: %v", err)
+		slog.Error("signup: hash password", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -89,13 +89,13 @@ func (h *AuthHandler) Signup(w http.ResponseWriter, r *http.Request) {
 			return
 
 		}
-		log.Printf("signup: create user: %v", err)
+		slog.Error("signup: create user", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
 	if err := h.startSession(w, r, user.ID); err != nil {
-		log.Printf("sign up start session: %v", err)
+		slog.Error("sign up start session", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -130,7 +130,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := h.startSession(w, r, user.ID); err != nil {
-		log.Printf("login: start session: %v", err)
+		slog.Error("login: start session", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
@@ -161,7 +161,7 @@ func (h *AuthHandler) Me(w http.ResponseWriter, r *http.Request) {
 func (h *AuthHandler) Logout(w http.ResponseWriter, r *http.Request) {
 	if cookie, err := r.Cookie(sessionCookieName); err == nil {
 		if err := h.repo.DeleteSession(r.Context(), session.Hash(cookie.Value)); err != nil {
-			log.Printf("logout: delete session: %v", err)
+			slog.Error("logout: delete session", "error", err)
 		}
 	}
 
