@@ -330,3 +330,33 @@ func (h *VideoHandler) LikeVideo(w http.ResponseWriter, r *http.Request) {
 func (h *VideoHandler) DislikeVideo(w http.ResponseWriter, r *http.Request) {
 	h.react(w, r, "dislike")
 }
+
+type myReactionResponse struct {
+	Type *string `json:"type"`
+}
+
+func (h *VideoHandler) GetMyReaction(w http.ResponseWriter, r *http.Request) {
+	videoID, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "invalid video id", http.StatusBadRequest)
+		return
+	}
+
+	user, _ := UserFromContext(r.Context())
+
+	interaction, err := h.repo.GetVideoInteraction(r.Context(), repository.GetVideoInteractionParams{
+		VideoID: pgtype.UUID{Bytes: videoID, Valid: true},
+		UserID:  pgtype.UUID{Bytes: user.ID, Valid: true},
+	})
+	if errors.Is(err, pgx.ErrNoRows) {
+		writeJSON(w, http.StatusOK, myReactionResponse{Type: nil})
+		return
+	}
+	if err != nil {
+		log.Printf("get video interaction: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, myReactionResponse{Type: &interaction.Type})
+}

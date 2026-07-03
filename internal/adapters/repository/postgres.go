@@ -120,6 +120,10 @@ func (r *PostgresRepository) ListPublicVideos(ctx context.Context, arg ListPubli
 	return r.queries.ListPublicVideos(ctx, arg)
 }
 
+func (r *PostgresRepository) GetVideoInteraction(ctx context.Context, arg GetVideoInteractionParams) (VideoInteraction, error) {
+	return r.queries.GetVideoInteraction(ctx, arg)
+}
+
 func (r *PostgresRepository) CreateChannel(ctx context.Context, arg CreateChannelParams) (Channel, error) {
 	return r.queries.CreateChannel(ctx, arg)
 }

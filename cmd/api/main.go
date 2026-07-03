@@ -67,6 +67,7 @@ func main() {
 	mux.HandleFunc("POST /videos/{id}/view", video.RecordView)
 	mux.Handle("POST /videos/{id}/like", requireAuth(http.HandlerFunc(video.LikeVideo)))
 	mux.Handle("POST /videos/{id}/dislike", requireAuth(http.HandlerFunc(video.DislikeVideo)))
+	mux.Handle("GET /videos/{id}/reaction", requireAuth(http.HandlerFunc(video.GetMyReaction)))
 	mux.HandleFunc("GET /channels/{handle}/videos", video.ListVideosByChannel)
 
 	log.Println("listening on :8082")
