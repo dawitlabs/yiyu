@@ -91,6 +91,18 @@ func (h *ChannelHandler) CreateChannel(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusCreated, toChannelResponse(channel))
 }
 
+func (h *ChannelHandler) GetMyChannel(w http.ResponseWriter, r *http.Request) {
+	user, _ := UserFromContext(r.Context())
+
+	channel, err := h.repo.GetChannelByUserID(r.Context(), pgtype.UUID{Bytes: user.ID, Valid: true})
+	if err != nil {
+		http.Error(w, "no channel yet", http.StatusNotFound)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toChannelResponse(channel))
+}
+
 func (h *ChannelHandler) GetChannelByHandle(w http.ResponseWriter, r *http.Request) {
 	channel, err := h.repo.GetChannelByHandle(r.Context(), r.PathValue("handle"))
 	if err != nil {
