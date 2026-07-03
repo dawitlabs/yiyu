@@ -92,6 +92,7 @@ func main() {
 	mux.Handle("POST /videos/{id}/dislike", requireAuth(http.HandlerFunc(video.DislikeVideo)))
 	mux.Handle("GET /videos/{id}/reaction", requireAuth(http.HandlerFunc(video.GetMyReaction)))
 	mux.HandleFunc("GET /channels/{handle}/videos", video.ListVideosByChannel)
+	mux.HandleFunc("GET /search", video.SearchVideos)
 
 	mux.Handle("POST /videos/{id}/comments", requireAuth(http.HandlerFunc(comment.CreateComment)))
 	mux.HandleFunc("GET /videos/{id}/comments", comment.ListCommentsByVideo)

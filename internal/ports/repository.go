@@ -56,6 +56,7 @@ type VideoRepository interface {
 	IncrementVideoDislikes(ctx context.Context, id uuid.UUID) (repository.Video, error)
 	ListPublicVideos(ctx context.Context, arg repository.ListPublicVideosParams) ([]repository.Video, error)
 	GetVideoInteraction(ctx context.Context, arg repository.GetVideoInteractionParams) (repository.VideoInteraction, error)
+	SearchVideos(ctx context.Context, arg repository.SearchVideosParams) ([]repository.Video, error)
 }
 
 type ChannelRepository interface {

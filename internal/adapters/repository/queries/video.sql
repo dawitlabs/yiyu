@@ -27,4 +27,11 @@ WHERE visibility = 'public' AND status = 'ready'
 ORDER BY uploaded_at DESC
 LIMIT $1 OFFSET $2;
 
-
+-- name: SearchVideos :many
+SELECT videos.id, videos.channel_id, videos.title, videos.description, videos.status, videos.visibility, videos.views_count, videos.likes_count, videos.dislikes_count, videos.thumbnail_url, videos.original_url, videos.hls_playlist_url, videos.category, videos.tags, videos.uploaded_at, videos.published_at, videos.created_at, videos.updated_at, videos.duration
+FROM videos
+JOIN video_search ON video_search.video_id = videos.id
+WHERE video_search.search_vector @@ websearch_to_tsquery('english', $1)
+  AND videos.visibility = 'public' AND videos.status = 'ready'
+ORDER BY ts_rank(video_search.search_vector, websearch_to_tsquery('english', $1)) DESC
+LIMIT $2 OFFSET $3;

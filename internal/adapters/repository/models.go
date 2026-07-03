@@ -177,6 +177,11 @@ type VideoInteraction struct {
 	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
 }
 
+type VideoSearch struct {
+	VideoID      uuid.UUID   `db:"video_id" json:"video_id"`
+	SearchVector interface{} `db:"search_vector" json:"search_vector"`
+}
+
 type WatchHistory struct {
 	ID        uuid.UUID          `db:"id" json:"id"`
 	UserID    pgtype.UUID        `db:"user_id" json:"user_id"`

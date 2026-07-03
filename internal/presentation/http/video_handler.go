@@ -360,3 +360,31 @@ func (h *VideoHandler) GetMyReaction(w http.ResponseWriter, r *http.Request) {
 
 	writeJSON(w, http.StatusOK, myReactionResponse{Type: &interaction.Type})
 }
+
+func (h *VideoHandler) SearchVideos(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query().Get("q")
+	if query == "" {
+		writeJSON(w, http.StatusOK, []videoResponse{})
+		return
+	}
+
+	limit, offset := parseLimitOffset(r)
+
+	videos, err := h.repo.SearchVideos(r.Context(), repository.SearchVideosParams{
+		WebsearchToTsquery: query,
+		Limit:              limit,
+		Offset:             offset,
+	})
+	if err != nil {
+		log.Printf("search videos: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	resp := make([]videoResponse, len(videos))
+	for i, v := range videos {
+		resp[i] = toVideoResponse(v)
+	}
+
+	writeJSON(w, http.StatusOK, resp)
+}

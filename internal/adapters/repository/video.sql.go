@@ -295,6 +295,62 @@ func (q *Queries) ListVideosByChannel(ctx context.Context, arg ListVideosByChann
 	return items, nil
 }
 
+const searchVideos = `-- name: SearchVideos :many
+SELECT videos.id, videos.channel_id, videos.title, videos.description, videos.status, videos.visibility, videos.views_count, videos.likes_count, videos.dislikes_count, videos.thumbnail_url, videos.original_url, videos.hls_playlist_url, videos.category, videos.tags, videos.uploaded_at, videos.published_at, videos.created_at, videos.updated_at, videos.duration
+FROM videos
+JOIN video_search ON video_search.video_id = videos.id
+WHERE video_search.search_vector @@ websearch_to_tsquery('english', $1)
+  AND videos.visibility = 'public' AND videos.status = 'ready'
+ORDER BY ts_rank(video_search.search_vector, websearch_to_tsquery('english', $1)) DESC
+LIMIT $2 OFFSET $3
+`
+
+type SearchVideosParams struct {
+	WebsearchToTsquery string `db:"websearch_to_tsquery" json:"websearch_to_tsquery"`
+	Limit              int32  `db:"limit" json:"limit"`
+	Offset             int32  `db:"offset" json:"offset"`
+}
+
+func (q *Queries) SearchVideos(ctx context.Context, arg SearchVideosParams) ([]Video, error) {
+	rows, err := q.db.Query(ctx, searchVideos, arg.WebsearchToTsquery, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Video
+	for rows.Next() {
+		var i Video
+		if err := rows.Scan(
+			&i.ID,
+			&i.ChannelID,
+			&i.Title,
+			&i.Description,
+			&i.Status,
+			&i.Visibility,
+			&i.ViewsCount,
+			&i.LikesCount,
+			&i.DislikesCount,
+			&i.ThumbnailUrl,
+			&i.OriginalUrl,
+			&i.HlsPlaylistUrl,
+			&i.Category,
+			&i.Tags,
+			&i.UploadedAt,
+			&i.PublishedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Duration,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateVideoStatus = `-- name: UpdateVideoStatus :one
 UPDATE videos SET status = $2, hls_playlist_url = $3, thumbnail_url = $4, updated_at = NOW() WHERE id = $1 RETURNING id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration
 `
