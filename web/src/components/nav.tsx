@@ -4,8 +4,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { User } from "@/lib/auth";
+import type { Channel } from "@/lib/channels";
 
-export function Nav({ user }: { user: User | null }) {
+export function Nav({
+  user,
+  channel,
+}: {
+  user: User | null;
+  channel: Channel | null;
+}) {
   const router = useRouter();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
@@ -25,6 +32,20 @@ export function Nav({ user }: { user: User | null }) {
 
         {user ? (
           <div className="flex items-center gap-4 text-sm">
+            <Link
+              href={channel ? `/channel/${channel.handle}` : "/channel/new"}
+              className="text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white"
+            >
+              {channel ? channel.name : "Create channel"}
+            </Link>
+            {channel && (
+              <Link
+                href="/upload"
+                className="text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white"
+              >
+                Upload
+              </Link>
+            )}
             <span className="text-black/60 dark:text-white/60">
               {user.username}
             </span>

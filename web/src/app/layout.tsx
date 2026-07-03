@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Nav } from "@/components/nav";
 import { getCurrentUser } from "@/lib/auth";
+import { getMyChannel } from "@/lib/my-channel";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -25,6 +26,7 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const user = await getCurrentUser();
+  const channel = user ? await getMyChannel() : null;
 
   return (
     <html
@@ -32,7 +34,7 @@ export default async function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <Nav user={user} />
+        <Nav user={user} channel={channel} />
         <main className="flex-1">{children}</main>
       </body>
     </html>
