@@ -10,22 +10,26 @@ A YouTube-style video platform backend, written in Go.
 - **Migrations:** [goose](https://github.com/pressly/goose)
 - **Password hashing:** argon2id (`internal/pkg/password`)
 - **Sessions:** server-side, DB-backed, hashed opaque tokens (`internal/pkg/session`)
+- **Object storage:** S3-compatible (MinIO locally, swappable for R2/S3 in production), presigned direct uploads (`internal/pkg/storage`)
+- **Search:** Postgres full-text search (`tsvector` + GIN index, `websearch_to_tsquery`)
+- **Video processing:** `cmd/worker` polls for pending uploads and transcodes them (ffmpeg/ffprobe via `os/exec`) — duration, thumbnail, single-rendition HLS
 
 ## Getting started
 
 ### Prerequisites
 
 - Go (see `go.mod` for version)
-- Docker, for the local Postgres instance
+- Docker, for local Postgres + MinIO
 - [goose](https://github.com/pressly/goose) and [sqlc](https://sqlc.dev/) CLIs on your `PATH`
+- `ffmpeg` and `ffprobe` on your `PATH`, for `cmd/worker`
 
 ### Setup
 
 ```sh
 cp .env.example .env
-# fill in DATABASE_URL if it differs from the default
+# fill in DATABASE_URL / STORAGE_* if they differ from the defaults
 
-make setup-db      # starts Postgres in Docker and applies migrations
+make setup-db      # starts Postgres + MinIO in Docker and applies migrations
 ```
 
 ### Running the API
@@ -35,6 +39,14 @@ DATABASE_URL="postgres://dawit:dawit@localhost:55432/yiyu?sslmode=disable" go ru
 ```
 
 The server listens on `:8082`.
+
+### Running the worker
+
+Uploaded videos sit at `status: "processing"` until this runs — without it, videos never get a duration, thumbnail, or HLS output (they're still watchable via `original_url` in the meantime).
+
+```sh
+DATABASE_URL="postgres://dawit:dawit@localhost:55432/yiyu?sslmode=disable" go run ./cmd/worker
+```
 
 ### Useful Makefile targets
 
@@ -58,15 +70,58 @@ sqlc generate
 
 ## API
 
+### Auth
+
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | `POST` | `/signup` | — | Create an account, starts a session |
 | `POST` | `/login` | — | Log in, starts a session |
 | `POST` | `/logout` | — | Ends the current session |
-| `GET` | `/me` | session cookie | Returns the current user |
-| `GET` | `/admin/users` | admin session | List users (paginated via `?limit=&offset=`) |
-| `PATCH` | `/admin/users/{id}/role` | admin session | Change a user's role (`user`, `admin`, `moderator`) |
-| `DELETE` | `/admin/users/{id}` | admin session | Soft-delete a user and kill their active sessions |
+| `GET` | `/me` | session cookie | Returns the current user (incl. `role`) |
+
+### Channels
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `POST` | `/channels` | session | Create a channel (one per user, DB-enforced) |
+| `GET` | `/channels/me` | session | The caller's own channel |
+| `GET` | `/channels/{handle}` | — | Public channel lookup |
+| `PATCH` | `/channels/{id}` | session, owner-only | Update name/description/avatar/banner |
+| `POST`/`DELETE` | `/channels/{id}/subscribe` | session | Subscribe / unsubscribe |
+| `GET` | `/channels/{id}/subscription` | session | Caller's subscription status |
+
+### Videos
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `POST` | `/uploads/presign` | session | Presigned direct-upload URL + resulting public URL |
+| `POST` | `/videos` | session | Create a video (`original_url` from an upload or an external link); starts at `status: "processing"` |
+| `GET` | `/videos` | — | Public feed (paginated) |
+| `GET` | `/videos/{id}` | — | Get a video |
+| `GET` | `/channels/{handle}/videos` | — | A channel's videos |
+| `GET` | `/search?q=` | — | Full-text search |
+| `GET` | `/feed/subscriptions` | session | Videos from subscribed channels |
+| `POST` | `/videos/{id}/view` | — | Record a view |
+| `POST` | `/videos/{id}/like` \| `/dislike` | session | Toggle reaction |
+| `GET` | `/videos/{id}/reaction` | session | Caller's current reaction |
+
+### Comments
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `POST` | `/videos/{id}/comments` | session | Post a comment |
+| `GET` | `/videos/{id}/comments` | — | List comments |
+| `DELETE` | `/comments/{id}` | session, author or admin | Soft-delete a comment |
+
+### Admin
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `GET` | `/admin/users` | admin | List users (paginated) |
+| `PATCH` | `/admin/users/{id}/role` | admin | Change a user's role |
+| `DELETE` | `/admin/users/{id}` | admin | Soft-delete a user, kill their sessions |
+| `GET` | `/admin/videos` | admin | List all videos |
+| `DELETE` | `/admin/videos/{id}` | admin | Hard-delete a video |
 
 There's no self-serve way to become an admin — sign up normally, then run
 `make seed-admin EMAIL=you@example.com` to promote that account.
@@ -76,7 +131,7 @@ There's no self-serve way to become an admin — sign up normally, then run
 ```
 cmd/
   api/            entrypoint for the HTTP server
-  worker/         entrypoint for background jobs
+  worker/         polls for pending videos and transcodes them
 internal/
   adapters/
     repository/   Postgres implementation (sqlc-generated + hand-written glue)
@@ -86,7 +141,10 @@ internal/
   pkg/
     password/     argon2id hashing
     session/      session token generation/hashing
+    storage/      S3-compatible object storage client
 migrations/       goose SQL migrations
+web/              Next.js public client
+admin/            Next.js admin dashboard
 ```
 
 ## License
