@@ -96,7 +96,7 @@ sqlc generate
 |---|---|---|---|
 | `POST` | `/uploads/presign` | session | Presigned direct-upload URL + resulting public URL |
 | `POST` | `/videos` | session | Create a video (`original_url` from an upload or an external link); starts at `status: "processing"` |
-| `GET` | `/videos` | — | Public feed (paginated) |
+| `GET` | `/videos` | optional session | Home feed (paginated) — recency for anonymous callers, boosted by the caller's subscriptions and watched categories when logged in |
 | `GET` | `/videos/{id}` | — | Get a video |
 | `GET` | `/channels/{handle}/videos` | — | A channel's videos |
 | `GET` | `/search?q=` | — | Full-text search |

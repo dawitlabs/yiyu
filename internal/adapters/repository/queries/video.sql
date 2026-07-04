@@ -49,6 +49,27 @@ WHERE visibility = 'public' AND status = 'ready'
 ORDER BY uploaded_at DESC
 LIMIT $1 OFFSET $2;
 
+-- name: ListPersonalizedFeed :many
+-- Same recency-ranked pool as ListPublicVideos, boosted by two signals
+-- already in the schema: subscribed channels and categories the user
+-- actually watches. No ML model — good enough at this scale, and every
+-- signal here already has an index (subscriptions.user_id, watch_history.user_id).
+WITH watched_categories AS (
+    SELECT v.category, COUNT(*) AS watch_count
+    FROM watch_history wh
+    JOIN videos v ON v.id = wh.video_id
+    WHERE wh.user_id = $1 AND v.category != ''
+    GROUP BY v.category
+)
+SELECT v.* FROM videos v
+LEFT JOIN watched_categories wc ON wc.category = v.category
+WHERE v.visibility = 'public' AND v.status = 'ready'
+ORDER BY
+    (v.channel_id IN (SELECT s.channel_id FROM subscriptions s WHERE s.user_id = $1)) DESC,
+    COALESCE(wc.watch_count, 0) DESC,
+    v.uploaded_at DESC
+LIMIT $2 OFFSET $3;
+
 -- name: ListRelatedVideos :many
 -- No ML/recommendation model — just same channel first, then same
 -- category, ranked by views. Good enough at this scale.

@@ -132,6 +132,10 @@ func (r *PostgresRepository) ListRelatedVideos(ctx context.Context, arg ListRela
 	return r.queries.ListRelatedVideos(ctx, arg)
 }
 
+func (r *PostgresRepository) ListPersonalizedFeed(ctx context.Context, arg ListPersonalizedFeedParams) ([]Video, error) {
+	return r.queries.ListPersonalizedFeed(ctx, arg)
+}
+
 func (r *PostgresRepository) SearchVideos(ctx context.Context, arg SearchVideosParams) ([]Video, error) {
 	return r.queries.SearchVideos(ctx, arg)
 }

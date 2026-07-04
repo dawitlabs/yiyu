@@ -352,6 +352,74 @@ func (q *Queries) IncrementVideoViews(ctx context.Context, id uuid.UUID) (Video,
 	return i, err
 }
 
+const listPersonalizedFeed = `-- name: ListPersonalizedFeed :many
+WITH watched_categories AS (
+    SELECT v.category, COUNT(*) AS watch_count
+    FROM watch_history wh
+    JOIN videos v ON v.id = wh.video_id
+    WHERE wh.user_id = $1 AND v.category != ''
+    GROUP BY v.category
+)
+SELECT v.id, v.channel_id, v.title, v.description, v.status, v.visibility, v.views_count, v.likes_count, v.dislikes_count, v.thumbnail_url, v.original_url, v.hls_playlist_url, v.category, v.tags, v.uploaded_at, v.published_at, v.created_at, v.updated_at, v.duration FROM videos v
+LEFT JOIN watched_categories wc ON wc.category = v.category
+WHERE v.visibility = 'public' AND v.status = 'ready'
+ORDER BY
+    (v.channel_id IN (SELECT s.channel_id FROM subscriptions s WHERE s.user_id = $1)) DESC,
+    COALESCE(wc.watch_count, 0) DESC,
+    v.uploaded_at DESC
+LIMIT $2 OFFSET $3
+`
+
+type ListPersonalizedFeedParams struct {
+	UserID pgtype.UUID `db:"user_id" json:"user_id"`
+	Limit  int32       `db:"limit" json:"limit"`
+	Offset int32       `db:"offset" json:"offset"`
+}
+
+// Same recency-ranked pool as ListPublicVideos, boosted by two signals
+// already in the schema: subscribed channels and categories the user
+// actually watches. No ML model — good enough at this scale, and every
+// signal here already has an index (subscriptions.user_id, watch_history.user_id).
+func (q *Queries) ListPersonalizedFeed(ctx context.Context, arg ListPersonalizedFeedParams) ([]Video, error) {
+	rows, err := q.db.Query(ctx, listPersonalizedFeed, arg.UserID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Video
+	for rows.Next() {
+		var i Video
+		if err := rows.Scan(
+			&i.ID,
+			&i.ChannelID,
+			&i.Title,
+			&i.Description,
+			&i.Status,
+			&i.Visibility,
+			&i.ViewsCount,
+			&i.LikesCount,
+			&i.DislikesCount,
+			&i.ThumbnailUrl,
+			&i.OriginalUrl,
+			&i.HlsPlaylistUrl,
+			&i.Category,
+			&i.Tags,
+			&i.UploadedAt,
+			&i.PublishedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Duration,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listPublicVideos = `-- name: ListPublicVideos :many
 SELECT id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration FROM videos
 WHERE visibility = 'public' AND status = 'ready'

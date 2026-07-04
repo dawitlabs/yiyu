@@ -244,13 +244,27 @@ func (h *VideoHandler) ListVideosByChannel(w http.ResponseWriter, r *http.Reques
 	writeJSON(w, http.StatusOK, resp)
 }
 
+// ListPublicVideos serves the home feed. Logged-in callers (route runs
+// behind OptionalAuth) get a feed boosted by their own subscriptions and
+// watch-history categories; everyone else gets plain recency.
 func (h *VideoHandler) ListPublicVideos(w http.ResponseWriter, r *http.Request) {
 	limit, offset := parseLimitOffset(r)
 
-	videos, err := h.repo.ListPublicVideos(r.Context(), repository.ListPublicVideosParams{
-		Limit:  limit,
-		Offset: offset,
-	})
+	user, ok := UserFromContext(r.Context())
+	var videos []repository.Video
+	var err error
+	if ok {
+		videos, err = h.repo.ListPersonalizedFeed(r.Context(), repository.ListPersonalizedFeedParams{
+			UserID: pgtype.UUID{Bytes: user.ID, Valid: true},
+			Limit:  limit,
+			Offset: offset,
+		})
+	} else {
+		videos, err = h.repo.ListPublicVideos(r.Context(), repository.ListPublicVideosParams{
+			Limit:  limit,
+			Offset: offset,
+		})
+	}
 	if err != nil {
 		slog.Error("list public videos", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)

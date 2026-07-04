@@ -86,6 +86,11 @@ type Querier interface {
 	// ListCommentReplies, not mixed flat into the same list.
 	ListCommentsByVideo(ctx context.Context, arg ListCommentsByVideoParams) ([]ListCommentsByVideoRow, error)
 	ListNotifications(ctx context.Context, arg ListNotificationsParams) ([]ListNotificationsRow, error)
+	// Same recency-ranked pool as ListPublicVideos, boosted by two signals
+	// already in the schema: subscribed channels and categories the user
+	// actually watches. No ML model — good enough at this scale, and every
+	// signal here already has an index (subscriptions.user_id, watch_history.user_id).
+	ListPersonalizedFeed(ctx context.Context, arg ListPersonalizedFeedParams) ([]Video, error)
 	ListPlaylistVideos(ctx context.Context, playlistID uuid.UUID) ([]Video, error)
 	ListPlaylistsByChannel(ctx context.Context, arg ListPlaylistsByChannelParams) ([]Playlist, error)
 	ListPublicVideos(ctx context.Context, arg ListPublicVideosParams) ([]Video, error)

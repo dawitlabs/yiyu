@@ -111,7 +111,7 @@ func main() {
 	mux.Handle("PATCH /channels/{id}", requireAuth(http.HandlerFunc(channel.UpdateChannel)))
 
 	mux.Handle("POST /videos", requireAuth(http.HandlerFunc(video.CreateVideo)))
-	mux.HandleFunc("GET /videos", video.ListPublicVideos)
+	mux.Handle("GET /videos", optionalAuth(http.HandlerFunc(video.ListPublicVideos)))
 	mux.HandleFunc("GET /videos/{id}", video.GetVideoByID)
 	mux.HandleFunc("GET /videos/{id}/related", video.ListRelatedVideos)
 	mux.Handle("POST /videos/{id}/report", requireAuth(http.HandlerFunc(video.ReportVideo)))
