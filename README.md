@@ -130,12 +130,16 @@ sqlc generate
 
 | Method | Path | Auth | Description |
 |---|---|---|---|
-| `POST` | `/channels/{id}/live/key` | session, owner-only | Issue a fresh RTMP stream key, invalidating the previous one. Returned once — not retrievable afterward |
+| `POST` | `/channels/{id}/live/key` | session, owner-only | Issue a fresh stream key, invalidating the previous one. Returns `{ rtmp_server, stream_key, whip_url }`, all shown once — not retrievable afterward |
 | `PATCH` | `/channels/{id}/live` | session, owner-only | Set the live stream's title |
 | `GET` | `/channels/{handle}/live` | — | `{ is_live, title, hls_url }` — poll this for the "LIVE" badge |
 | `GET` | `/live/{handle}/{file}` | — | Reverse-proxies HLS playback from MediaMTX; 404s when the channel isn't live |
 
-To go live: paste the returned `rtmp_server` and `stream_key` into OBS (Settings → Stream → Custom), start streaming, and `cmd/worker`'s poller flips the channel live within one poll interval (5s) once MediaMTX reports the RTMP path as ready.
+Two ways to go live, no preference either way:
+- **Browser, no extra software**: the "Go live" page can broadcast camera or screen share directly via WHIP (WebRTC-HTTP ingest) — MediaMTX accepts it the same as RTMP, just over `whip_url` instead.
+- **OBS or any RTMP encoder**: paste `rtmp_server` and `stream_key` into it (Settings → Stream → Custom).
+
+Either way, `cmd/worker`'s poller flips the channel live within one poll interval (5s) once MediaMTX reports the path as ready.
 
 ### Admin
 

@@ -38,6 +38,8 @@ services:
       - "1935:1935" # RTMP ingest (OBS pushes here)
       - "8888:8888" # HLS output — internal, only cmd/api's reverse proxy should read this
       - "9997:9997" # control API — internal, only cmd/worker's poller should read this
+      - "8889:8889" # WHIP ingest — browser broadcasting (camera/screen share), publicly reachable
+      - "8189:8189/udp" # WebRTC ICE media for WHIP
     restart: unless-stopped
 
   minio-init:

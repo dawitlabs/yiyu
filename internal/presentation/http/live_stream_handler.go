@@ -26,13 +26,14 @@ type liveStreamRepository interface {
 // playback from the MediaMTX media server, which does the actual RTMP
 // ingest and HLS packaging — this handler never touches video bytes.
 type LiveStreamHandler struct {
-	repo       liveStreamRepository
-	rtmpServer string // shown to creators as the OBS "Server" field, e.g. rtmp://host:1935/live
-	hlsBaseURL string // MediaMTX's internal HLS server, e.g. http://mediamtx:8888 — never exposed to clients directly
+	repo        liveStreamRepository
+	rtmpServer  string // shown to creators as the OBS "Server" field, e.g. rtmp://host:1935/live
+	hlsBaseURL  string // MediaMTX's internal HLS server, e.g. http://mediamtx:8888 — never exposed to clients directly
+	whipBaseURL string // MediaMTX's WHIP (WebRTC) server, e.g. http://host:8889 — this one IS public: it's how the browser broadcasts without OBS
 }
 
-func NewLiveStreamHandler(repo liveStreamRepository, rtmpServer, hlsBaseURL string) *LiveStreamHandler {
-	return &LiveStreamHandler{repo: repo, rtmpServer: rtmpServer, hlsBaseURL: hlsBaseURL}
+func NewLiveStreamHandler(repo liveStreamRepository, rtmpServer, hlsBaseURL, whipBaseURL string) *LiveStreamHandler {
+	return &LiveStreamHandler{repo: repo, rtmpServer: rtmpServer, hlsBaseURL: hlsBaseURL, whipBaseURL: whipBaseURL}
 }
 
 func (h *LiveStreamHandler) isChannelOwner(r *http.Request, channel repository.Channel) bool {
@@ -80,6 +81,7 @@ func (h *LiveStreamHandler) IssueStreamKey(w http.ResponseWriter, r *http.Reques
 	writeJSON(w, http.StatusOK, map[string]string{
 		"rtmp_server": h.rtmpServer,
 		"stream_key":  rawKey,
+		"whip_url":    fmt.Sprintf("%s/live/%s/whip", h.whipBaseURL, rawKey),
 	})
 }
 

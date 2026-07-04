@@ -76,6 +76,7 @@ func main() {
 	liveStream := httpapi.NewLiveStreamHandler(repo,
 		getEnv("MEDIAMTX_RTMP_SERVER", "rtmp://localhost:1935/live"),
 		getEnv("MEDIAMTX_HLS_URL", "http://localhost:8888"),
+		getEnv("MEDIAMTX_WHIP_URL", "http://localhost:8889"),
 	)
 
 	requireAuth := httpapi.RequireAuth(repo)

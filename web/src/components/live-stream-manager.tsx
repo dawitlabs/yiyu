@@ -1,10 +1,12 @@
 "use client";
 
 import { type SubmitEvent, useState } from "react";
+import { BroadcastPanel } from "@/components/broadcast-panel";
 
 type StreamCredentials = {
   rtmp_server: string;
   stream_key: string;
+  whip_url: string;
 };
 
 export function LiveStreamManager({
@@ -59,9 +61,10 @@ export function LiveStreamManager({
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
         <p className="text-sm text-black/60 dark:text-white/60">
-          Issue a stream key, then paste it into OBS (Settings → Stream →
-          Custom) along with the server URL. Your channel goes live within
-          seconds of OBS connecting.
+          Issue a stream key, then either broadcast straight from this browser
+          below, or paste the key into OBS (Settings → Stream → Custom) if you'd
+          rather use that. Your channel goes live within seconds of either one
+          connecting.
         </p>
         <button
           type="button"
@@ -94,6 +97,8 @@ export function LiveStreamManager({
           </div>
         )}
       </div>
+
+      {credentials && <BroadcastPanel whipUrl={credentials.whip_url} />}
 
       <form onSubmit={handleTitleSubmit} className="flex flex-col gap-2">
         <label htmlFor="liveTitle" className="text-sm font-medium">

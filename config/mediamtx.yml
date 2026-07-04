@@ -1,8 +1,13 @@
-# Everything else uses MediaMTX's built-in defaults (RTMP :1935, HLS :8888).
-# The only reason this file exists: the API listener is off by default, and
-# cmd/worker's live-status poller needs it.
+# A custom config file replaces MediaMTX's entire built-in default config
+# rather than merging with it, so anything the defaults normally provide has
+# to be restated here explicitly.
 api: yes
 apiAddress: :9997
+
+# The default "all_others" wildcard path, which lets a stream publish to any
+# path name (our secret stream_key) without it being pre-registered.
+paths:
+  all_others:
 
 # MediaMTX's own default permission set for anonymous callers doesn't
 # include the "api" action — only publish/read/playback. Since the API port
