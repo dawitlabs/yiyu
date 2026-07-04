@@ -5,10 +5,12 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -79,6 +81,13 @@ func transcode(ctx context.Context, repo *repository.PostgresRepository, store *
 		return fmt.Errorf("upload hls: %w", err)
 	}
 
+	// Auto-captions are best-effort: WHISPER_MODEL is unset in most local
+	// setups (no model file bundled), and a transcription failure shouldn't
+	// block a video that's otherwise ready to watch.
+	if err := generateAndSaveCaptions(ctx, repo, store, originalPath, workDir, video); err != nil {
+		slog.Warn("auto-caption generation skipped", "video_id", video.ID, "error", err)
+	}
+
 	_, err = repo.CompleteVideoProcessing(ctx, repository.CompleteVideoProcessingParams{
 		ID:             video.ID,
 		HlsPlaylistUrl: pgtype.Text{String: playlistURL, Valid: true},
@@ -90,6 +99,91 @@ func transcode(ctx context.Context, repo *repository.PostgresRepository, store *
 	}
 
 	return nil
+}
+
+var autoDetectedLanguageRe = regexp.MustCompile(`auto-detected language: (\w+)`)
+
+// generateAndSaveCaptions runs a local whisper.cpp model over the video's
+// audio track and saves the result as a caption track. Requires WHISPER_MODEL
+// to point at a ggml model file and WHISPER_BIN (default "whisper-cli") to be
+// on PATH — if WHISPER_MODEL isn't set, auto-captions are simply skipped.
+func generateAndSaveCaptions(ctx context.Context, repo *repository.PostgresRepository, store *storage.Client, originalPath, workDir string, video repository.Video) error {
+	modelPath := os.Getenv("WHISPER_MODEL")
+	if modelPath == "" {
+		return nil
+	}
+	whisperBin := getEnv("WHISPER_BIN", "whisper-cli")
+
+	audioPath := filepath.Join(workDir, "audio.wav")
+	if err := runFFmpeg(ctx,
+		"-y",
+		"-i", originalPath,
+		"-vn",
+		"-ar", "16000",
+		"-ac", "1",
+		"-c:a", "pcm_s16le",
+		audioPath,
+	); err != nil {
+		return fmt.Errorf("extract audio: %w", err)
+	}
+
+	outPrefix := filepath.Join(workDir, "captions")
+	language, err := runWhisper(ctx, whisperBin, modelPath, audioPath, outPrefix)
+	if err != nil {
+		return fmt.Errorf("run whisper: %w", err)
+	}
+
+	vttFile, err := os.Open(outPrefix + ".vtt")
+	if err != nil {
+		return fmt.Errorf("open generated vtt: %w", err)
+	}
+	defer vttFile.Close()
+	info, err := vttFile.Stat()
+	if err != nil {
+		return fmt.Errorf("stat generated vtt: %w", err)
+	}
+
+	captionURL, err := store.Upload(ctx, fmt.Sprintf("videos/%s/captions/auto-%s.vtt", video.ID, language), vttFile, info.Size(), "text/vtt")
+	if err != nil {
+		return fmt.Errorf("upload vtt: %w", err)
+	}
+
+	_, err = repo.CreateCaption(ctx, repository.CreateCaptionParams{
+		VideoID:   pgtype.UUID{Bytes: video.ID, Valid: true},
+		Language:  language,
+		Label:     "Auto-generated",
+		Url:       captionURL,
+		IsDefault: pgtype.Bool{Bool: true, Valid: true},
+	})
+	if err != nil {
+		return fmt.Errorf("save caption: %w", err)
+	}
+	return nil
+}
+
+// runWhisper transcribes audioPath into outPrefix+".vtt" and returns the
+// language whisper.cpp auto-detected. "-l auto" makes it detect rather than
+// assume English — this project is explicitly bilingual EN/Amharic, so
+// guessing "en" for every upload would silently produce garbage captions
+// on Amharic audio.
+func runWhisper(ctx context.Context, whisperBin, modelPath, audioPath, outPrefix string) (language string, err error) {
+	cmd := exec.CommandContext(ctx, whisperBin,
+		"-m", modelPath,
+		"-f", audioPath,
+		"-l", "auto",
+		"-ovtt",
+		"-of", outPrefix,
+	)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		return "", fmt.Errorf("%w: %s", err, stderr.String())
+	}
+
+	if m := autoDetectedLanguageRe.FindStringSubmatch(stderr.String()); m != nil {
+		return m[1], nil
+	}
+	return "en", nil
 }
 
 func downloadFile(ctx context.Context, url, destPath string) error {

@@ -2,6 +2,28 @@ package main
 
 import "testing"
 
+func TestAutoDetectedLanguageRe(t *testing.T) {
+	cases := []struct {
+		stderr string
+		want   string
+	}{
+		{"whisper_full_with_state: auto-detected language: am (p = 0.91)\n", "am"},
+		{"whisper_full_with_state: auto-detected language: en (p = 0.99)\n", "en"},
+		{"no matching log line here\n", ""},
+	}
+
+	for _, c := range cases {
+		m := autoDetectedLanguageRe.FindStringSubmatch(c.stderr)
+		got := ""
+		if m != nil {
+			got = m[1]
+		}
+		if got != c.want {
+			t.Errorf("autoDetectedLanguageRe on %q = %q, want %q", c.stderr, got, c.want)
+		}
+	}
+}
+
 func TestRenditionsFor(t *testing.T) {
 	cases := []struct {
 		sourceHeight int

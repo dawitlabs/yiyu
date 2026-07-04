@@ -12,7 +12,8 @@ A YouTube-style video platform backend, written in Go.
 - **Sessions:** server-side, DB-backed, hashed opaque tokens (`internal/pkg/session`)
 - **Object storage:** S3-compatible (MinIO locally, swappable for R2/S3 in production), presigned direct uploads (`internal/pkg/storage`)
 - **Search:** Postgres full-text search (`tsvector` + GIN index, `websearch_to_tsquery`)
-- **Video processing:** `cmd/worker` polls for pending uploads and transcodes them (ffmpeg/ffprobe via `os/exec`) — duration, thumbnail, single-rendition HLS
+- **Video processing:** `cmd/worker` polls for pending uploads and transcodes them (ffmpeg/ffprobe via `os/exec`) — duration, thumbnail, adaptive-bitrate HLS (1080p/720p/480p ladder, capped by source resolution)
+- **Auto-captions (optional):** if `WHISPER_MODEL` is set, the worker runs a local [whisper.cpp](https://github.com/ggml-org/whisper.cpp) model over each upload's audio and saves the result as a caption track, language auto-detected
 
 ## Getting started
 
@@ -22,6 +23,7 @@ A YouTube-style video platform backend, written in Go.
 - Docker, for local Postgres + MinIO
 - [goose](https://github.com/pressly/goose) and [sqlc](https://sqlc.dev/) CLIs on your `PATH`
 - `ffmpeg` and `ffprobe` on your `PATH`, for `cmd/worker`
+- (optional) [whisper.cpp](https://github.com/ggml-org/whisper.cpp) built as `whisper-cli` on your `PATH`, plus a ggml model file, for auto-captions — see `WHISPER_MODEL` below
 
 ### Setup
 
