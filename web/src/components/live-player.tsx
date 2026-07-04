@@ -14,6 +14,13 @@ export function LivePlayer({ hlsUrl }: { hlsUrl: string }) {
       return;
     }
 
+    // Browsers block unmuted autoplay without a user gesture — play()
+    // rejects silently (the .catch below was hiding exactly that), so the
+    // stream would attach and buffer but never actually start. Muted
+    // autoplay is exempt from that policy; the shell's mute button lets the
+    // viewer unmute afterward, same as YouTube's own live player.
+    videoEl.muted = true;
+
     if (videoEl.canPlayType("application/vnd.apple.mpegurl")) {
       videoEl.src = hlsUrl;
       videoEl.play().catch(() => {});

@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
@@ -182,6 +183,22 @@ func main() {
 	// above still applies underneath this on /signup and /login.
 	generalRateLimit := httpapi.RateLimit(120, 30)
 
+	// HLS playback is exempt from the general budget: a single viewer's
+	// player legitimately fires many small requests per second (playlist
+	// polling plus one request per segment/LL-HLS part), which blows
+	// through 120/min almost immediately and looks nothing like abuse.
+	liveMediaRateLimit := httpapi.RateLimit(3000, 100)
+
+	generalHandler := generalRateLimit(mux)
+	liveMediaHandler := liveMediaRateLimit(mux)
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/live/") {
+			liveMediaHandler.ServeHTTP(w, r)
+			return
+		}
+		generalHandler.ServeHTTP(w, r)
+	})
+
 	log.Println("listening on :8082")
-	log.Fatal(http.ListenAndServe(":8082", generalRateLimit(mux)))
+	log.Fatal(http.ListenAndServe(":8082", handler))
 }
