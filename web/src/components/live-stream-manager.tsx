@@ -2,23 +2,18 @@
 
 import { type SubmitEvent, useState } from "react";
 import { BroadcastPanel } from "@/components/broadcast-panel";
-
-type StreamCredentials = {
-  rtmp_server: string;
-  stream_key: string;
-  whip_url: string;
-};
+import type { StreamCredentials } from "@/lib/live";
 
 export function LiveStreamManager({
   channelId,
   initialTitle,
+  initialCredentials,
 }: {
   channelId: string;
   initialTitle: string;
+  initialCredentials: StreamCredentials | null;
 }) {
-  const [credentials, setCredentials] = useState<StreamCredentials | null>(
-    null,
-  );
+  const [credentials, setCredentials] = useState(initialCredentials);
   const [isIssuing, setIsIssuing] = useState(false);
   const [title, setTitle] = useState(initialTitle);
   const [isSavingTitle, setIsSavingTitle] = useState(false);
@@ -28,7 +23,7 @@ export function LiveStreamManager({
     if (
       credentials &&
       !window.confirm(
-        "This invalidates your current stream key — any running stream will disconnect. Continue?",
+        "This invalidates your current stream key — any running stream will disconnect, and you'll need to update OBS with the new one. Continue?",
       )
     ) {
       return;
@@ -61,26 +56,13 @@ export function LiveStreamManager({
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
         <p className="text-sm text-black/60 dark:text-white/60">
-          Issue a stream key, then either broadcast straight from this browser
-          below, or paste the key into OBS (Settings → Stream → Custom) if you'd
-          rather use that. Your channel goes live within seconds of either one
-          connecting.
+          Broadcast straight from this browser below, or paste your stream key
+          into OBS (Settings → Stream → Custom) if you'd rather use that. Your
+          channel goes live within seconds of either one connecting.
         </p>
-        <button
-          type="button"
-          disabled={isIssuing}
-          onClick={handleIssueKey}
-          className="self-start rounded-md bg-black px-3 py-1.5 text-sm text-white disabled:opacity-50 dark:bg-white dark:text-black"
-        >
-          {isIssuing
-            ? "Issuing…"
-            : credentials
-              ? "Regenerate stream key"
-              : "Generate stream key"}
-        </button>
 
-        {credentials && (
-          <div className="mt-2 flex flex-col gap-2 rounded-md border border-black/15 p-3 text-sm dark:border-white/15">
+        {credentials ? (
+          <div className="flex flex-col gap-2 rounded-md border border-black/15 p-3 text-sm dark:border-white/15">
             <div>
               <p className="text-xs text-black/60 dark:text-white/60">Server</p>
               <code className="break-all">{credentials.rtmp_server}</code>
@@ -91,10 +73,30 @@ export function LiveStreamManager({
               </p>
               <code className="break-all">{credentials.stream_key}</code>
             </div>
-            <p className="text-xs text-red-600 dark:text-red-400">
-              Shown once — copy it now. Regenerating replaces it.
-            </p>
           </div>
+        ) : (
+          <p className="text-sm text-black/60 dark:text-white/60">
+            No stream key yet.
+          </p>
+        )}
+
+        <button
+          type="button"
+          disabled={isIssuing}
+          onClick={handleIssueKey}
+          className="self-start rounded-md border border-black/15 px-3 py-1.5 text-sm disabled:opacity-50 dark:border-white/15"
+        >
+          {isIssuing
+            ? "Issuing…"
+            : credentials
+              ? "Regenerate stream key"
+              : "Generate stream key"}
+        </button>
+        {credentials && (
+          <p className="text-xs text-red-600 dark:text-red-400">
+            Regenerating invalidates this key immediately — any running stream
+            disconnects and OBS needs the new one.
+          </p>
         )}
       </div>
 

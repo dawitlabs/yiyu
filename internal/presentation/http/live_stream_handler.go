@@ -41,10 +41,48 @@ func (h *LiveStreamHandler) isChannelOwner(r *http.Request, channel repository.C
 	return ok && channel.UserID.Valid && channel.UserID.Bytes == user.ID
 }
 
+func (h *LiveStreamHandler) streamCredentials(rawKey string) map[string]string {
+	return map[string]string{
+		"rtmp_server": h.rtmpServer,
+		"stream_key":  rawKey,
+		"whip_url":    fmt.Sprintf("%s/live/%s/whip", h.whipBaseURL, rawKey),
+	}
+}
+
+// GetStreamKey returns the caller's existing stream key so the "Go live"
+// page can show it on every visit without forcing a regenerate-and-
+// reconfigure-OBS cycle each time. A channel gets its first key automatically
+// at creation (ChannelHandler.CreateChannel); this 404s only if that failed.
+func (h *LiveStreamHandler) GetStreamKey(w http.ResponseWriter, r *http.Request) {
+	channelID, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "invalid channel id", http.StatusBadRequest)
+		return
+	}
+
+	channel, err := h.repo.GetChannelByID(r.Context(), channelID)
+	if err != nil {
+		http.Error(w, "channel not found", http.StatusNotFound)
+		return
+	}
+	if !h.isChannelOwner(r, channel) {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+
+	stream, err := h.repo.GetLiveStreamByChannelID(r.Context(), pgtype.UUID{Bytes: channel.ID, Valid: true})
+	if err != nil {
+		http.Error(w, "no stream key yet", http.StatusNotFound)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, h.streamCredentials(stream.StreamKey))
+}
+
 // IssueStreamKey generates a fresh stream key for the caller's channel,
 // overwriting any previous one — the old key stops working immediately.
-// The raw key is only ever returned here; it isn't stored anywhere it could
-// be read back later, so losing it means generating a new one.
+// Channels get their first key automatically at creation; this is for
+// explicitly rotating it (e.g. it leaked).
 func (h *LiveStreamHandler) IssueStreamKey(w http.ResponseWriter, r *http.Request) {
 	channelID, err := uuid.Parse(r.PathValue("id"))
 	if err != nil {
@@ -78,11 +116,7 @@ func (h *LiveStreamHandler) IssueStreamKey(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	writeJSON(w, http.StatusOK, map[string]string{
-		"rtmp_server": h.rtmpServer,
-		"stream_key":  rawKey,
-		"whip_url":    fmt.Sprintf("%s/live/%s/whip", h.whipBaseURL, rawKey),
-	})
+	writeJSON(w, http.StatusOK, h.streamCredentials(rawKey))
 }
 
 type liveStatusResponse struct {

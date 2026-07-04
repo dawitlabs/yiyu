@@ -8,17 +8,23 @@ import (
 	"time"
 
 	"github.com/dawitlabs/yiyu/internal/adapters/repository"
+	"github.com/dawitlabs/yiyu/internal/pkg/session"
 	"github.com/dawitlabs/yiyu/internal/ports"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type ChannelHandler struct {
-	repo ports.ChannelRepository
+type channelRepository interface {
+	ports.ChannelRepository
+	ports.LiveStreamRepository
 }
 
-func NewChannelHandler(repo ports.ChannelRepository) *ChannelHandler {
+type ChannelHandler struct {
+	repo channelRepository
+}
+
+func NewChannelHandler(repo channelRepository) *ChannelHandler {
 	return &ChannelHandler{repo: repo}
 }
 
@@ -86,6 +92,18 @@ func (h *ChannelHandler) CreateChannel(w http.ResponseWriter, r *http.Request) {
 		slog.Error("create channel", "error", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
+	}
+
+	// Issued once here and reused for the channel's lifetime — the "Go
+	// live" page reads it back via GetStreamKey rather than forcing a
+	// fresh generate-and-reconfigure-OBS cycle on every visit.
+	if rawKey, _, err := session.Generate(); err != nil {
+		slog.Error("generate initial stream key", "error", err)
+	} else if _, err := h.repo.UpsertLiveStreamKey(r.Context(), repository.UpsertLiveStreamKeyParams{
+		ChannelID: pgtype.UUID{Bytes: channel.ID, Valid: true},
+		StreamKey: rawKey,
+	}); err != nil {
+		slog.Error("save initial stream key", "error", err)
 	}
 
 	writeJSON(w, http.StatusCreated, toChannelResponse(channel))

@@ -160,6 +160,7 @@ func main() {
 	mux.Handle("DELETE /posts/{id}", requireAuth(http.HandlerFunc(communityPost.DeletePost)))
 	mux.Handle("POST /posts/{id}/like", requireAuth(http.HandlerFunc(communityPost.LikePost)))
 
+	mux.Handle("GET /channels/{id}/live/key", requireAuth(http.HandlerFunc(liveStream.GetStreamKey)))
 	mux.Handle("POST /channels/{id}/live/key", requireAuth(http.HandlerFunc(liveStream.IssueStreamKey)))
 	mux.Handle("PATCH /channels/{id}/live", requireAuth(http.HandlerFunc(liveStream.SetTitle)))
 	mux.HandleFunc("GET /channels/{handle}/live", liveStream.GetLiveStatus)
