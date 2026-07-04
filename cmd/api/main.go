@@ -73,6 +73,10 @@ func main() {
 	caption := httpapi.NewCaptionHandler(repo)
 	chapter := httpapi.NewChapterHandler(repo)
 	analytics := httpapi.NewAnalyticsHandler(repo)
+	liveStream := httpapi.NewLiveStreamHandler(repo,
+		getEnv("MEDIAMTX_RTMP_SERVER", "rtmp://localhost:1935/live"),
+		getEnv("MEDIAMTX_HLS_URL", "http://localhost:8888"),
+	)
 
 	requireAuth := httpapi.RequireAuth(repo)
 	optionalAuth := httpapi.OptionalAuth(repo)
@@ -152,6 +156,11 @@ func main() {
 	mux.HandleFunc("GET /channels/{handle}/posts", communityPost.ListPostsByChannel)
 	mux.Handle("DELETE /posts/{id}", requireAuth(http.HandlerFunc(communityPost.DeletePost)))
 	mux.Handle("POST /posts/{id}/like", requireAuth(http.HandlerFunc(communityPost.LikePost)))
+
+	mux.Handle("POST /channels/{id}/live/key", requireAuth(http.HandlerFunc(liveStream.IssueStreamKey)))
+	mux.Handle("PATCH /channels/{id}/live", requireAuth(http.HandlerFunc(liveStream.SetTitle)))
+	mux.HandleFunc("GET /channels/{handle}/live", liveStream.GetLiveStatus)
+	mux.HandleFunc("GET /live/{handle}/{file...}", liveStream.ProxyHLS)
 
 	mux.Handle("GET /notifications", requireAuth(http.HandlerFunc(notification.ListNotifications)))
 	mux.Handle("GET /notifications/unread-count", requireAuth(http.HandlerFunc(notification.UnreadCount)))

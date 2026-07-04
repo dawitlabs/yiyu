@@ -228,6 +228,26 @@ func (r *PostgresRepository) CreatePlaylist(ctx context.Context, arg CreatePlayl
 	return r.queries.CreatePlaylist(ctx, arg)
 }
 
+func (r *PostgresRepository) UpsertLiveStreamKey(ctx context.Context, arg UpsertLiveStreamKeyParams) (LiveStream, error) {
+	return r.queries.UpsertLiveStreamKey(ctx, arg)
+}
+
+func (r *PostgresRepository) GetLiveStreamByChannelID(ctx context.Context, channelID pgtype.UUID) (LiveStream, error) {
+	return r.queries.GetLiveStreamByChannelID(ctx, channelID)
+}
+
+func (r *PostgresRepository) UpdateLiveStreamTitle(ctx context.Context, arg UpdateLiveStreamTitleParams) (LiveStream, error) {
+	return r.queries.UpdateLiveStreamTitle(ctx, arg)
+}
+
+func (r *PostgresRepository) ListLiveStreams(ctx context.Context) ([]LiveStream, error) {
+	return r.queries.ListLiveStreams(ctx)
+}
+
+func (r *PostgresRepository) SetLiveStreamStatus(ctx context.Context, arg SetLiveStreamStatusParams) error {
+	return r.queries.SetLiveStreamStatus(ctx, arg)
+}
+
 func (r *PostgresRepository) CreateCommunityPost(ctx context.Context, arg CreateCommunityPostParams) (CommunityPost, error) {
 	return r.queries.CreateCommunityPost(ctx, arg)
 }

@@ -23,6 +23,7 @@ type Repository interface {
 	ChapterRepository
 	AnalyticsRepository
 	CommunityPostRepository
+	LiveStreamRepository
 
 	// WithTx runs fn inside a single transaction, giving it access to every
 	// query method (repository.Querier is the full sqlc-generated set) —
@@ -110,6 +111,14 @@ type PlaylistRepository interface {
 	RemoveVideoFromPlaylist(ctx context.Context, arg repository.RemoveVideoFromPlaylistParams) error
 	ListPlaylistVideos(ctx context.Context, id uuid.UUID) ([]repository.Video, error)
 	ListAllPlaylistsByChannel(ctx context.Context, arg repository.ListAllPlaylistsByChannelParams) ([]repository.Playlist, error)
+}
+
+type LiveStreamRepository interface {
+	UpsertLiveStreamKey(ctx context.Context, arg repository.UpsertLiveStreamKeyParams) (repository.LiveStream, error)
+	GetLiveStreamByChannelID(ctx context.Context, channelID pgtype.UUID) (repository.LiveStream, error)
+	UpdateLiveStreamTitle(ctx context.Context, arg repository.UpdateLiveStreamTitleParams) (repository.LiveStream, error)
+	ListLiveStreams(ctx context.Context) ([]repository.LiveStream, error)
+	SetLiveStreamStatus(ctx context.Context, arg repository.SetLiveStreamStatusParams) error
 }
 
 type CommunityPostRepository interface {

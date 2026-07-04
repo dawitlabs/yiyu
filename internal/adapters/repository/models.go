@@ -102,6 +102,17 @@ type CommunityPostLike struct {
 	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
 }
 
+type LiveStream struct {
+	ID        uuid.UUID          `db:"id" json:"id"`
+	ChannelID pgtype.UUID        `db:"channel_id" json:"channel_id"`
+	StreamKey string             `db:"stream_key" json:"stream_key"`
+	Title     string             `db:"title" json:"title"`
+	Status    string             `db:"status" json:"status"`
+	StartedAt pgtype.Timestamptz `db:"started_at" json:"started_at"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+}
+
 type Notification struct {
 	ID        uuid.UUID          `db:"id" json:"id"`
 	UserID    pgtype.UUID        `db:"user_id" json:"user_id"`

@@ -14,6 +14,7 @@ A YouTube-style video platform backend, written in Go.
 - **Search:** Postgres full-text search (`tsvector` + GIN index, `websearch_to_tsquery`)
 - **Video processing:** `cmd/worker` polls for pending uploads and transcodes them (ffmpeg/ffprobe via `os/exec`) — duration, thumbnail, adaptive-bitrate HLS (1080p/720p/480p ladder, capped by source resolution)
 - **Auto-captions (optional):** if `WHISPER_MODEL` is set, the worker runs a local [whisper.cpp](https://github.com/ggml-org/whisper.cpp) model over each upload's audio and saves the result as a caption track, language auto-detected
+- **Live streaming (optional):** [MediaMTX](https://github.com/bluenviron/mediamtx) (in `docker-compose.yml`) handles RTMP ingest and HLS packaging; `cmd/api` issues per-channel stream keys and reverse-proxies HLS playback so the secret key is never sent to viewers, `cmd/worker` polls MediaMTX's status API to flip a channel live/offline
 
 ## Getting started
 
@@ -123,6 +124,17 @@ sqlc generate
 | `GET` | `/channels/{handle}/posts` | — | List a channel's posts |
 | `DELETE` | `/posts/{id}` | session, owner or admin | Delete a post |
 | `POST` | `/posts/{id}/like` | session | Toggle the caller's like |
+
+### Live streaming
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `POST` | `/channels/{id}/live/key` | session, owner-only | Issue a fresh RTMP stream key, invalidating the previous one. Returned once — not retrievable afterward |
+| `PATCH` | `/channels/{id}/live` | session, owner-only | Set the live stream's title |
+| `GET` | `/channels/{handle}/live` | — | `{ is_live, title, hls_url }` — poll this for the "LIVE" badge |
+| `GET` | `/live/{handle}/{file}` | — | Reverse-proxies HLS playback from MediaMTX; 404s when the channel isn't live |
+
+To go live: paste the returned `rtmp_server` and `stream_key` into OBS (Settings → Stream → Custom), start streaming, and `cmd/worker`'s poller flips the channel live within one poll interval (5s) once MediaMTX reports the RTMP path as ready.
 
 ### Admin
 

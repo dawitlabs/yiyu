@@ -29,6 +29,15 @@ services:
       - minio_data:/data
     restart: unless-stopped
 
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    container_name: yiyu-mediamtx
+    ports:
+      - "1935:1935" # RTMP ingest (OBS pushes here)
+      - "8888:8888" # HLS output — internal, only cmd/api's reverse proxy should read this
+      - "9997:9997" # control API — internal, only cmd/worker's poller should read this
+    restart: unless-stopped
+
   minio-init:
     image: minio/mc:latest
     depends_on:

@@ -7,6 +7,7 @@ import { serverFetch } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
 import type { Channel } from "@/lib/channels";
 import type { CommunityPost } from "@/lib/community-posts";
+import type { LiveStatus } from "@/lib/live";
 import { getMyChannel } from "@/lib/my-channel";
 import type { Playlist } from "@/lib/playlists";
 import type { Video } from "@/lib/videos";
@@ -18,15 +19,23 @@ export default async function ChannelPage({
 }) {
   const { handle } = await params;
 
-  const [channelRes, videosRes, playlistsRes, postsRes, myChannel, user] =
-    await Promise.all([
-      serverFetch(`/channels/${handle}`),
-      serverFetch(`/channels/${handle}/videos`),
-      serverFetch(`/channels/${handle}/playlists`),
-      serverFetch(`/channels/${handle}/posts`),
-      getMyChannel(),
-      getCurrentUser(),
-    ]);
+  const [
+    channelRes,
+    videosRes,
+    playlistsRes,
+    postsRes,
+    liveRes,
+    myChannel,
+    user,
+  ] = await Promise.all([
+    serverFetch(`/channels/${handle}`),
+    serverFetch(`/channels/${handle}/videos`),
+    serverFetch(`/channels/${handle}/playlists`),
+    serverFetch(`/channels/${handle}/posts`),
+    serverFetch(`/channels/${handle}/live`),
+    getMyChannel(),
+    getCurrentUser(),
+  ]);
 
   if (!channelRes.ok) {
     notFound();
@@ -38,6 +47,9 @@ export default async function ChannelPage({
     ? await playlistsRes.json()
     : [];
   const posts: CommunityPost[] = postsRes.ok ? await postsRes.json() : [];
+  const live: LiveStatus = liveRes.ok
+    ? await liveRes.json()
+    : { is_live: false, title: "" };
   const isOwner = myChannel?.handle === channel.handle;
 
   let isSubscribed = false;
@@ -53,9 +65,19 @@ export default async function ChannelPage({
     <div className="mx-auto max-w-5xl px-4 py-10">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            {channel.name}
-          </h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {channel.name}
+            </h1>
+            {live.is_live && (
+              <Link
+                href={`/live/${channel.handle}`}
+                className="rounded-full bg-red-600 px-2 py-0.5 text-xs font-medium text-white"
+              >
+                LIVE
+              </Link>
+            )}
+          </div>
           <p className="text-black/60 dark:text-white/60">
             @{channel.handle} · {channel.subscriber_count} subscribers
           </p>
@@ -72,6 +94,12 @@ export default async function ChannelPage({
               className="rounded-md border border-black/15 px-3 py-1.5 text-sm dark:border-white/15"
             >
               Edit channel
+            </Link>
+            <Link
+              href="/channel/live"
+              className="rounded-md border border-black/15 px-3 py-1.5 text-sm dark:border-white/15"
+            >
+              Go live
             </Link>
             <Link
               href="/upload"

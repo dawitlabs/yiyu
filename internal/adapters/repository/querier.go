@@ -69,6 +69,7 @@ type Querier interface {
 	GetCommentLike(ctx context.Context, arg GetCommentLikeParams) (CommentLike, error)
 	GetCommunityPostByID(ctx context.Context, id uuid.UUID) (CommunityPost, error)
 	GetCommunityPostLike(ctx context.Context, arg GetCommunityPostLikeParams) (CommunityPostLike, error)
+	GetLiveStreamByChannelID(ctx context.Context, channelID pgtype.UUID) (LiveStream, error)
 	GetPlaylistByID(ctx context.Context, id uuid.UUID) (Playlist, error)
 	GetSessionWithUser(ctx context.Context, tokenHash string) (GetSessionWithUserRow, error)
 	GetSubscription(ctx context.Context, arg GetSubscriptionParams) (Subscription, error)
@@ -94,6 +95,9 @@ type Querier interface {
 	// ListCommentReplies, not mixed flat into the same list.
 	ListCommentsByVideo(ctx context.Context, arg ListCommentsByVideoParams) ([]ListCommentsByVideoRow, error)
 	ListCommunityPostsByChannel(ctx context.Context, arg ListCommunityPostsByChannelParams) ([]CommunityPost, error)
+	// Small table (one row per channel that's ever gone live) — a full scan
+	// every poll interval is cheap enough that indexing by status isn't needed.
+	ListLiveStreams(ctx context.Context) ([]LiveStream, error)
 	ListNotifications(ctx context.Context, arg ListNotificationsParams) ([]ListNotificationsRow, error)
 	// Same recency-ranked pool as ListPublicVideos, boosted by two signals
 	// already in the schema: subscribed channels and categories the user
@@ -112,9 +116,14 @@ type Querier interface {
 	MarkNotificationRead(ctx context.Context, arg MarkNotificationReadParams) (Notification, error)
 	RemoveVideoFromPlaylist(ctx context.Context, arg RemoveVideoFromPlaylistParams) error
 	SearchVideos(ctx context.Context, arg SearchVideosParams) ([]Video, error)
+	SetLiveStreamStatus(ctx context.Context, arg SetLiveStreamStatusParams) error
 	UpdateChannel(ctx context.Context, arg UpdateChannelParams) (Channel, error)
+	UpdateLiveStreamTitle(ctx context.Context, arg UpdateLiveStreamTitleParams) (LiveStream, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 	UpdateVideoInteractionType(ctx context.Context, arg UpdateVideoInteractionTypeParams) (VideoInteraction, error)
+	// Issuing a key is also how a channel "resets" their stream — regenerating
+	// forces status back to offline until the new key is actually used to publish.
+	UpsertLiveStreamKey(ctx context.Context, arg UpsertLiveStreamKeyParams) (LiveStream, error)
 	UpsertWatchHistory(ctx context.Context, arg UpsertWatchHistoryParams) (WatchHistory, error)
 }
 

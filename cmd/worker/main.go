@@ -59,6 +59,19 @@ func main() {
 
 	repo := repository.NewPostgresRepository(pool)
 
+	if mediamtxAPIURL := os.Getenv("MEDIAMTX_API_URL"); mediamtxAPIURL != "" {
+		go func() {
+			ticker := time.NewTicker(pollInterval)
+			defer ticker.Stop()
+			for range ticker.C {
+				if err := pollLiveStreams(ctx, repo, mediamtxAPIURL); err != nil {
+					slog.Error("poll live streams", "error", err)
+				}
+			}
+		}()
+		log.Println("polling MediaMTX for live stream status")
+	}
+
 	log.Println("worker started, polling for videos to process")
 	for {
 		processed, err := processNext(ctx, repo, storageClient)
