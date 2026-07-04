@@ -111,6 +111,7 @@ func main() {
 	mux.Handle("PATCH /admin/reports/{id}", requireAdmin(http.HandlerFunc(admin.UpdateReportStatus)))
 
 	mux.Handle("POST /channels", requireAuth(http.HandlerFunc(channel.CreateChannel)))
+	mux.HandleFunc("GET /channels", channel.ListChannels)
 	mux.Handle("GET /channels/me", requireAuth(http.HandlerFunc(channel.GetMyChannel)))
 	mux.HandleFunc("GET /channels/{handle}", channel.GetChannelByHandle)
 	mux.Handle("PATCH /channels/{id}", requireAuth(http.HandlerFunc(channel.UpdateChannel)))

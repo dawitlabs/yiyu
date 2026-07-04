@@ -172,6 +172,14 @@ func (r *PostgresRepository) UpdateChannel(ctx context.Context, arg UpdateChanne
 	return r.queries.UpdateChannel(ctx, arg)
 }
 
+func (r *PostgresRepository) ListChannels(ctx context.Context, arg ListChannelsParams) ([]Channel, error) {
+	return r.queries.ListChannels(ctx, arg)
+}
+
+func (r *PostgresRepository) GetChannelsByIDs(ctx context.Context, ids []uuid.UUID) ([]Channel, error) {
+	return r.queries.GetChannelsByIDs(ctx, ids)
+}
+
 func (r *PostgresRepository) CreateComment(ctx context.Context, arg CreateCommentParams) (Comment, error) {
 	return r.queries.CreateComment(ctx, arg)
 }

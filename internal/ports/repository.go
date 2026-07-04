@@ -75,6 +75,8 @@ type ChannelRepository interface {
 	GetChannelByHandle(ctx context.Context, handle string) (repository.Channel, error)
 	GetChannelByUserID(ctx context.Context, userID pgtype.UUID) (repository.Channel, error)
 	UpdateChannel(ctx context.Context, arg repository.UpdateChannelParams) (repository.Channel, error)
+	ListChannels(ctx context.Context, arg repository.ListChannelsParams) ([]repository.Channel, error)
+	GetChannelsByIDs(ctx context.Context, ids []uuid.UUID) ([]repository.Channel, error)
 }
 
 type CommentRepository interface {

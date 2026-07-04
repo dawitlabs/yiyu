@@ -103,6 +103,30 @@ func (h *ChannelHandler) GetMyChannel(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, toChannelResponse(channel))
 }
 
+// ListChannels is the channel directory — the only way to discover a
+// channel today besides already knowing its handle or finding it via a
+// video. Ranked by subscriber count, same as ListChannels' SQL default.
+func (h *ChannelHandler) ListChannels(w http.ResponseWriter, r *http.Request) {
+	limit, offset := parseLimitOffset(r)
+
+	channels, err := h.repo.ListChannels(r.Context(), repository.ListChannelsParams{
+		Limit:  limit,
+		Offset: offset,
+	})
+	if err != nil {
+		slog.Error("list channels", "error", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	resp := make([]channelResponse, len(channels))
+	for i, c := range channels {
+		resp[i] = toChannelResponse(c)
+	}
+
+	writeJSON(w, http.StatusOK, resp)
+}
+
 func (h *ChannelHandler) GetChannelByHandle(w http.ResponseWriter, r *http.Request) {
 	channel, err := h.repo.GetChannelByHandle(r.Context(), r.PathValue("handle"))
 	if err != nil {

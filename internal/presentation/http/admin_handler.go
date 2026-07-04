@@ -16,6 +16,7 @@ type adminRepository interface {
 	authRepository
 	ports.VideoRepository
 	ports.ReportRepository
+	ports.ChannelRepository
 }
 
 type AdminHandler struct {
@@ -144,12 +145,7 @@ func (h *AdminHandler) ListVideos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := make([]videoResponse, len(videos))
-	for i, v := range videos {
-		resp[i] = toVideoResponse(v)
-	}
-
-	writeJSON(w, http.StatusOK, resp)
+	writeJSON(w, http.StatusOK, toVideoResponses(r.Context(), h.repo, videos))
 }
 
 // DeleteVideo is a hard delete — videos has no soft-delete column the way

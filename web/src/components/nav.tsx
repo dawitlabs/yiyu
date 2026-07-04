@@ -45,6 +45,12 @@ export function Nav({
         {user ? (
           <div className="flex items-center gap-4 text-sm">
             <Link
+              href="/channels"
+              className="text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white"
+            >
+              Channels
+            </Link>
+            <Link
               href="/subscriptions"
               className="text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white"
             >
@@ -99,6 +105,12 @@ export function Nav({
           </div>
         ) : (
           <div className="flex items-center gap-4 text-sm">
+            <Link
+              href="/channels"
+              className="text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white"
+            >
+              Channels
+            </Link>
             <Link
               href="/login"
               className="text-black/60 hover:text-black dark:text-white/60 dark:hover:text-white"

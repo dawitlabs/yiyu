@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AddToPlaylist } from "@/components/add-to-playlist";
 import { CaptionManager } from "@/components/caption-manager";
@@ -91,6 +92,12 @@ export default async function WatchPage({
       <h1 className="mt-4 text-xl font-semibold tracking-tight">
         {video.title}
       </h1>
+      <Link
+        href={`/channel/${video.channel_handle}`}
+        className="mt-1 inline-block text-sm text-black/60 hover:text-black hover:underline dark:text-white/60 dark:hover:text-white"
+      >
+        {video.channel_name}
+      </Link>
       <div className="mt-2 flex items-center justify-between">
         <p className="text-sm text-black/60 dark:text-white/60">
           {video.views_count} views

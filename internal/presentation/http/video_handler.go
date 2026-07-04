@@ -43,6 +43,8 @@ func NewVideoHandler(repo videoRepository) *VideoHandler {
 type videoResponse struct {
 	ID             string    `json:"id"`
 	ChannelID      string    `json:"channel_id"`
+	ChannelName    string    `json:"channel_name"`
+	ChannelHandle  string    `json:"channel_handle"`
 	Title          string    `json:"title"`
 	Description    string    `json:"description"`
 	Status         string    `json:"status"`
@@ -59,10 +61,15 @@ type videoResponse struct {
 	UploadedAt     time.Time `json:"uploaded_at"`
 }
 
-func toVideoResponse(v repository.Video) videoResponse {
+// toVideoResponse takes the video's channel alongside it — every video card
+// in the UI needs to show and link to who posted it, so the channel isn't
+// optional context here the way it might be on, say, a moderation queue.
+func toVideoResponse(v repository.Video, channel repository.Channel) videoResponse {
 	return videoResponse{
 		ID:             v.ID.String(),
 		ChannelID:      uuid.UUID(v.ChannelID.Bytes).String(),
+		ChannelName:    channel.Name,
+		ChannelHandle:  channel.Handle,
 		Title:          v.Title,
 		Description:    v.Description.String,
 		Status:         v.Status,
@@ -78,6 +85,38 @@ func toVideoResponse(v repository.Video) videoResponse {
 		Duration:       v.Duration.Int32,
 		UploadedAt:     v.UploadedAt.Time,
 	}
+}
+
+// toVideoResponses batches one GetChannelsByIDs call for a whole list
+// instead of one channel lookup per video, for endpoints whose videos can
+// span many different channels (feeds, search, related).
+func toVideoResponses(ctx context.Context, repo ports.ChannelRepository, videos []repository.Video) []videoResponse {
+	seen := make(map[uuid.UUID]bool, len(videos))
+	ids := make([]uuid.UUID, 0, len(videos))
+	for _, v := range videos {
+		id := uuid.UUID(v.ChannelID.Bytes)
+		if v.ChannelID.Valid && !seen[id] {
+			seen[id] = true
+			ids = append(ids, id)
+		}
+	}
+
+	channels := make(map[uuid.UUID]repository.Channel, len(ids))
+	if len(ids) > 0 {
+		rows, err := repo.GetChannelsByIDs(ctx, ids)
+		if err != nil {
+			slog.Error("get channels by ids", "error", err)
+		}
+		for _, c := range rows {
+			channels[c.ID] = c
+		}
+	}
+
+	resp := make([]videoResponse, len(videos))
+	for i, v := range videos {
+		resp[i] = toVideoResponse(v, channels[uuid.UUID(v.ChannelID.Bytes)])
+	}
+	return resp
 }
 
 type createVideoRequest struct {
@@ -142,7 +181,7 @@ func (h *VideoHandler) CreateVideo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, toVideoResponse(video))
+	writeJSON(w, http.StatusCreated, toVideoResponse(video, channel))
 }
 
 // GetVideoByID does not currently enforce visibility (private/unlisted) —
@@ -161,7 +200,14 @@ func (h *VideoHandler) GetVideoByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, toVideoResponse(video))
+	channel, err := h.repo.GetChannelByID(r.Context(), uuid.UUID(video.ChannelID.Bytes))
+	if err != nil {
+		slog.Error("get video's channel", "error", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toVideoResponse(video, channel))
 }
 
 func (h *VideoHandler) ListRelatedVideos(w http.ResponseWriter, r *http.Request) {
@@ -191,12 +237,7 @@ func (h *VideoHandler) ListRelatedVideos(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	resp := make([]videoResponse, len(videos))
-	for i, v := range videos {
-		resp[i] = toVideoResponse(v)
-	}
-
-	writeJSON(w, http.StatusOK, resp)
+	writeJSON(w, http.StatusOK, toVideoResponses(r.Context(), h.repo, videos))
 }
 
 // parseLimitOffset reads ?limit=&offset= query params with sane defaults and
@@ -236,9 +277,11 @@ func (h *VideoHandler) ListVideosByChannel(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
+	// Every video here belongs to the same already-resolved channel, so no
+	// per-video or batch lookup is needed the way the mixed-channel feeds do.
 	resp := make([]videoResponse, len(videos))
 	for i, v := range videos {
-		resp[i] = toVideoResponse(v)
+		resp[i] = toVideoResponse(v, channel)
 	}
 
 	writeJSON(w, http.StatusOK, resp)
@@ -271,12 +314,7 @@ func (h *VideoHandler) ListPublicVideos(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	resp := make([]videoResponse, len(videos))
-	for i, v := range videos {
-		resp[i] = toVideoResponse(v)
-	}
-
-	writeJSON(w, http.StatusOK, resp)
+	writeJSON(w, http.StatusOK, toVideoResponses(r.Context(), h.repo, videos))
 }
 
 // RecordView is unauthenticated by design — anonymous viewers still count.
@@ -295,7 +333,14 @@ func (h *VideoHandler) RecordView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, toVideoResponse(video))
+	channel, err := h.repo.GetChannelByID(r.Context(), uuid.UUID(video.ChannelID.Bytes))
+	if err != nil {
+		slog.Error("get video's channel", "error", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toVideoResponse(video, channel))
 }
 
 // react toggles the caller's like/dislike on a video. Clicking the same
@@ -379,7 +424,14 @@ func (h *VideoHandler) react(w http.ResponseWriter, r *http.Request, reactionTyp
 		return
 	}
 
-	writeJSON(w, http.StatusOK, toVideoResponse(video))
+	channel, err := h.repo.GetChannelByID(r.Context(), uuid.UUID(video.ChannelID.Bytes))
+	if err != nil {
+		slog.Error("get video's channel", "error", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toVideoResponse(video, channel))
 }
 
 func (h *VideoHandler) LikeVideo(w http.ResponseWriter, r *http.Request) {
@@ -440,12 +492,7 @@ func (h *VideoHandler) SearchVideos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := make([]videoResponse, len(videos))
-	for i, v := range videos {
-		resp[i] = toVideoResponse(v)
-	}
-
-	writeJSON(w, http.StatusOK, resp)
+	writeJSON(w, http.StatusOK, toVideoResponses(r.Context(), h.repo, videos))
 }
 
 func (h *VideoHandler) ReportVideo(w http.ResponseWriter, r *http.Request) {

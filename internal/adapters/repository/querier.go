@@ -64,6 +64,9 @@ type Querier interface {
 	GetChannelByHandle(ctx context.Context, handle string) (Channel, error)
 	GetChannelByID(ctx context.Context, id uuid.UUID) (Channel, error)
 	GetChannelByUserID(ctx context.Context, userID pgtype.UUID) (Channel, error)
+	// Batch lookup so video listing endpoints can attach channel name/handle to
+	// every row with one extra query instead of one per video.
+	GetChannelsByIDs(ctx context.Context, ids []uuid.UUID) ([]Channel, error)
 	GetChapterByID(ctx context.Context, id uuid.UUID) (VideoChapter, error)
 	GetCommentByID(ctx context.Context, id uuid.UUID) (Comment, error)
 	GetCommentLike(ctx context.Context, arg GetCommentLikeParams) (CommentLike, error)
@@ -89,6 +92,7 @@ type Querier interface {
 	ListAllPlaylistsByChannel(ctx context.Context, arg ListAllPlaylistsByChannelParams) ([]Playlist, error)
 	ListCaptionsByVideo(ctx context.Context, videoID pgtype.UUID) ([]VideoCaption, error)
 	ListChannelVideoStats(ctx context.Context, arg ListChannelVideoStatsParams) ([]ListChannelVideoStatsRow, error)
+	ListChannels(ctx context.Context, arg ListChannelsParams) ([]Channel, error)
 	ListChaptersByVideo(ctx context.Context, videoID pgtype.UUID) ([]VideoChapter, error)
 	ListCommentReplies(ctx context.Context, arg ListCommentRepliesParams) ([]ListCommentRepliesRow, error)
 	// Top-level only (parent_id IS NULL) — replies are fetched separately via

@@ -118,6 +118,85 @@ func (q *Queries) GetChannelByUserID(ctx context.Context, userID pgtype.UUID) (C
 	return i, err
 }
 
+const getChannelsByIDs = `-- name: GetChannelsByIDs :many
+SELECT id, user_id, handle, name, description, avatar_url, banner_url, subscriber_count, created_at, updated_at FROM channels WHERE id = ANY($1::uuid[])
+`
+
+// Batch lookup so video listing endpoints can attach channel name/handle to
+// every row with one extra query instead of one per video.
+func (q *Queries) GetChannelsByIDs(ctx context.Context, ids []uuid.UUID) ([]Channel, error) {
+	rows, err := q.db.Query(ctx, getChannelsByIDs, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Channel
+	for rows.Next() {
+		var i Channel
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Handle,
+			&i.Name,
+			&i.Description,
+			&i.AvatarUrl,
+			&i.BannerUrl,
+			&i.SubscriberCount,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listChannels = `-- name: ListChannels :many
+SELECT id, user_id, handle, name, description, avatar_url, banner_url, subscriber_count, created_at, updated_at FROM channels
+ORDER BY subscriber_count DESC NULLS LAST, created_at DESC
+LIMIT $1 OFFSET $2
+`
+
+type ListChannelsParams struct {
+	Limit  int32 `db:"limit" json:"limit"`
+	Offset int32 `db:"offset" json:"offset"`
+}
+
+func (q *Queries) ListChannels(ctx context.Context, arg ListChannelsParams) ([]Channel, error) {
+	rows, err := q.db.Query(ctx, listChannels, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Channel
+	for rows.Next() {
+		var i Channel
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Handle,
+			&i.Name,
+			&i.Description,
+			&i.AvatarUrl,
+			&i.BannerUrl,
+			&i.SubscriberCount,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const updateChannel = `-- name: UpdateChannel :one
 UPDATE channels
 SET name = $2,

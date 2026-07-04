@@ -87,6 +87,7 @@ sqlc generate
 | Method | Path | Auth | Description |
 |---|---|---|---|
 | `POST` | `/channels` | session | Create a channel (one per user, DB-enforced) |
+| `GET` | `/channels` | — | Channel directory, ranked by subscriber count — the browse/discovery entry point |
 | `GET` | `/channels/me` | session | The caller's own channel |
 | `GET` | `/channels/{handle}` | — | Public channel lookup |
 | `PATCH` | `/channels/{id}` | session, owner-only | Update name/description/avatar/banner |

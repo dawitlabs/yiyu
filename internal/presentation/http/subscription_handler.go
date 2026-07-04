@@ -165,10 +165,7 @@ func (h *SubscriptionHandler) GetFeed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	resp := make([]videoResponse, len(videos))
-	for i, v := range videos {
-		resp[i] = toVideoResponse(v)
-	}
+	resp := toVideoResponses(r.Context(), h.repo, videos)
 
 	writeJSON(w, http.StatusOK, resp)
 }

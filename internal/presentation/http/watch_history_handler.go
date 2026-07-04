@@ -11,11 +11,16 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type WatchHistoryHandler struct {
-	repo ports.WatchHistoryRepository
+type watchHistoryRepository interface {
+	ports.WatchHistoryRepository
+	ports.ChannelRepository
 }
 
-func NewWatchHistoryHandler(repo ports.WatchHistoryRepository) *WatchHistoryHandler {
+type WatchHistoryHandler struct {
+	repo watchHistoryRepository
+}
+
+func NewWatchHistoryHandler(repo watchHistoryRepository) *WatchHistoryHandler {
 	return &WatchHistoryHandler{repo: repo}
 }
 
@@ -68,10 +73,5 @@ func (h *WatchHistoryHandler) ListHistory(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	resp := make([]videoResponse, len(videos))
-	for i, v := range videos {
-		resp[i] = toVideoResponse(v)
-	}
-
-	writeJSON(w, http.StatusOK, resp)
+	writeJSON(w, http.StatusOK, toVideoResponses(r.Context(), h.repo, videos))
 }

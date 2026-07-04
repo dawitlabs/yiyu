@@ -180,14 +180,9 @@ func (h *PlaylistHandler) GetPlaylist(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	videoResps := make([]videoResponse, len(videos))
-	for i, v := range videos {
-		videoResps[i] = toVideoResponse(v)
-	}
-
 	writeJSON(w, http.StatusOK, playlistWithVideosResponse{
 		playlistResponse: toPlaylistResponse(playlist),
-		Videos:           videoResps,
+		Videos:           toVideoResponses(r.Context(), h.repo, videos),
 	})
 }
 

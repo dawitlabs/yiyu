@@ -1,6 +1,8 @@
 export type Video = {
   id: string;
   channel_id: string;
+  channel_name: string;
+  channel_handle: string;
   title: string;
   description: string;
   status: string;
