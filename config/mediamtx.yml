@@ -1,0 +1,19 @@
+# Everything else uses MediaMTX's built-in defaults (RTMP :1935, HLS :8888).
+# The only reason this file exists: the API listener is off by default, and
+# cmd/worker's live-status poller needs it.
+api: yes
+apiAddress: :9997
+
+# MediaMTX's own default permission set for anonymous callers doesn't
+# include the "api" action — only publish/read/playback. Since the API port
+# is meant to stay off the public internet (see docker-compose.yml), it's
+# fine to allow it here rather than wiring up credentials.
+authInternalUsers:
+  - user: any
+    pass:
+    ips: []
+    permissions:
+      - action: publish
+      - action: read
+      - action: playback
+      - action: api
