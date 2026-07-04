@@ -177,7 +177,15 @@ func (h *LiveStreamHandler) ProxyHLS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	upstreamURL := fmt.Sprintf("%s/%s/%s", h.hlsBaseURL, stream.StreamKey, file)
+	// MediaMTX's HLS path mirrors its RTMP path exactly ("live/{key}"), not
+	// just the bare key — same structure the poller has to account for.
+	// The query string matters too: MediaMTX hands out a "?session=..." on
+	// content it returns when no cookie was sent (which a stateless proxy
+	// never does), and the player's follow-up segment requests carry it.
+	upstreamURL := fmt.Sprintf("%s/live/%s/%s", h.hlsBaseURL, stream.StreamKey, file)
+	if r.URL.RawQuery != "" {
+		upstreamURL += "?" + r.URL.RawQuery
+	}
 	req, err := http.NewRequestWithContext(r.Context(), http.MethodGet, upstreamURL, nil)
 	if err != nil {
 		http.Error(w, "internal server error", http.StatusInternalServerError)

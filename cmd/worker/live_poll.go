@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/dawitlabs/yiyu/internal/adapters/repository"
@@ -16,6 +17,18 @@ type mediaMTXPathsResponse struct {
 		Name  string `json:"name"`
 		Ready bool   `json:"ready"`
 	} `json:"items"`
+}
+
+// streamKeyFromPath extracts our stream_key from a MediaMTX path name.
+// MediaMTX's "path" is the full RTMP path ("live/{key}"), not just the
+// stream key — the publish URL is rtmp://host/live/{key}, and MediaMTX
+// doesn't split off "live" as a separate app name the way some RTMP
+// servers do. Only the last segment is the key we store.
+func streamKeyFromPath(path string) string {
+	if i := strings.LastIndex(path, "/"); i != -1 {
+		return path[i+1:]
+	}
+	return path
 }
 
 // pollLiveStreams asks MediaMTX which paths are actively publishing and
@@ -42,7 +55,7 @@ func pollLiveStreams(ctx context.Context, repo *repository.PostgresRepository, a
 	readyPaths := make(map[string]bool, len(parsed.Items))
 	for _, item := range parsed.Items {
 		if item.Ready {
-			readyPaths[item.Name] = true
+			readyPaths[streamKeyFromPath(item.Name)] = true
 		}
 	}
 
