@@ -56,6 +56,26 @@ export function BroadcastPanel({ whipUrl }: { whipUrl: string }) {
       pc.addTrack(track, stream);
     }
 
+    // MediaMTX remuxes WebRTC straight into HLS without transcoding, and
+    // HLS/fMP4 playback only reliably decodes H264 — a browser's default
+    // codec pick (often VP8/VP9) would publish fine but produce a stream
+    // nothing downstream can actually play.
+    const videoTransceiver = pc
+      .getTransceivers()
+      .find((t) => t.sender.track?.kind === "video");
+    if (videoTransceiver && "setCodecPreferences" in videoTransceiver) {
+      const codecs = RTCRtpSender.getCapabilities("video")?.codecs ?? [];
+      const h264 = codecs.filter(
+        (c) => c.mimeType.toLowerCase() === "video/h264",
+      );
+      const rest = codecs.filter(
+        (c) => c.mimeType.toLowerCase() !== "video/h264",
+      );
+      if (h264.length > 0) {
+        videoTransceiver.setCodecPreferences([...h264, ...rest]);
+      }
+    }
+
     try {
       const offer = await pc.createOffer();
       await pc.setLocalDescription(offer);
