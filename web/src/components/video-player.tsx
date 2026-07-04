@@ -1,5 +1,6 @@
 "use client";
 
+import Hls from "hls.js";
 import { useEffect, useRef } from "react";
 import type { Caption } from "@/lib/captions";
 import type { Chapter } from "@/lib/chapters";
@@ -33,6 +34,30 @@ export function VideoPlayer({
   useEffect(() => {
     fetch(`/api/videos/${videoId}/view`, { method: "POST" });
   }, [videoId]);
+
+  // Chrome/Firefox have no built-in HLS support, so an .m3u8 source needs
+  // hls.js to demux it into something <video> can play. Safari plays HLS
+  // natively and hls.js has to stay out of its way.
+  useEffect(() => {
+    const videoEl = videoRef.current;
+    if (!videoEl || !src.endsWith(".m3u8")) {
+      return;
+    }
+
+    if (videoEl.canPlayType("application/vnd.apple.mpegurl")) {
+      videoEl.src = src;
+      return;
+    }
+
+    if (!Hls.isSupported()) {
+      return;
+    }
+
+    const hls = new Hls();
+    hls.loadSource(src);
+    hls.attachMedia(videoEl);
+    return () => hls.destroy();
+  }, [src]);
 
   function handlePlay() {
     if (!canRecordHistory || hasStarted.current) {
@@ -71,7 +96,7 @@ export function VideoPlayer({
         {/* biome-ignore lint/a11y/useMediaCaption: tracks come from a dynamic captions array; biome can't verify one is always present, but real videos with caption tracks uploaded do have one */}
         <video
           ref={videoRef}
-          src={src}
+          src={src.endsWith(".m3u8") ? undefined : src}
           controls
           onPlay={handlePlay}
           onEnded={handleEnded}

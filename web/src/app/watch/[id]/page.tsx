@@ -75,7 +75,7 @@ export default async function WatchPage({
     <div className="mx-auto max-w-4xl px-4 py-10">
       <VideoPlayer
         videoId={video.id}
-        src={video.original_url}
+        src={video.hls_playlist_url || video.original_url}
         canRecordHistory={user !== null}
         captions={captions}
         chapters={chapters}
