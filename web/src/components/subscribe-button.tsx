@@ -32,7 +32,7 @@ export function SubscribeButton({
       type="button"
       disabled={isPending}
       onClick={toggle}
-      className={`rounded-md px-3 py-1.5 text-sm disabled:opacity-50 ${
+      className={`rounded-full px-4 py-1.5 text-sm font-medium disabled:opacity-50 ${
         subscribed
           ? "border border-black/15 dark:border-white/15"
           : "bg-black text-white dark:bg-white dark:text-black"

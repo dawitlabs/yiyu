@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/dawitlabs/yiyu/internal/adapters/repository"
+	"github.com/dawitlabs/yiyu/internal/application/livechat"
 	"github.com/dawitlabs/yiyu/internal/pkg/storage"
 	httpapi "github.com/dawitlabs/yiyu/internal/presentation/http"
 )
@@ -79,6 +80,7 @@ func main() {
 		getEnv("MEDIAMTX_HLS_URL", "http://localhost:8888"),
 		getEnv("MEDIAMTX_WHIP_URL", "http://localhost:8889"),
 	)
+	liveChat := httpapi.NewLiveChatHandler(repo, livechat.NewHub())
 
 	requireAuth := httpapi.RequireAuth(repo)
 	optionalAuth := httpapi.OptionalAuth(repo)
@@ -127,7 +129,14 @@ func main() {
 	mux.Handle("POST /videos/{id}/like", requireAuth(http.HandlerFunc(video.LikeVideo)))
 	mux.Handle("POST /videos/{id}/dislike", requireAuth(http.HandlerFunc(video.DislikeVideo)))
 	mux.Handle("GET /videos/{id}/reaction", requireAuth(http.HandlerFunc(video.GetMyReaction)))
+	mux.Handle("GET /me/liked-videos", requireAuth(http.HandlerFunc(video.ListLikedVideos)))
+	mux.Handle("POST /videos/{id}/watch-later", requireAuth(http.HandlerFunc(video.AddWatchLater)))
+	mux.Handle("DELETE /videos/{id}/watch-later", requireAuth(http.HandlerFunc(video.RemoveWatchLater)))
+	mux.Handle("GET /videos/{id}/watch-later", requireAuth(http.HandlerFunc(video.GetWatchLaterStatus)))
+	mux.Handle("GET /me/watch-later", requireAuth(http.HandlerFunc(video.ListWatchLater)))
 	mux.HandleFunc("GET /channels/{handle}/videos", video.ListVideosByChannel)
+	mux.HandleFunc("GET /videos/trending", video.ListTrendingVideos)
+	mux.HandleFunc("GET /search/suggestions", video.SuggestVideoTitles)
 	mux.HandleFunc("GET /search", video.SearchVideos)
 
 	mux.Handle("POST /videos/{id}/comments", requireAuth(http.HandlerFunc(comment.CreateComment)))
@@ -165,6 +174,7 @@ func main() {
 	mux.Handle("PATCH /channels/{id}/live", requireAuth(http.HandlerFunc(liveStream.SetTitle)))
 	mux.HandleFunc("GET /channels/{handle}/live", liveStream.GetLiveStatus)
 	mux.HandleFunc("GET /live/{handle}/{file...}", liveStream.ProxyHLS)
+	mux.Handle("GET /ws/live/{handle}", requireAuth(http.HandlerFunc(liveChat.Join)))
 
 	mux.Handle("GET /notifications", requireAuth(http.HandlerFunc(notification.ListNotifications)))
 	mux.Handle("GET /notifications/unread-count", requireAuth(http.HandlerFunc(notification.UnreadCount)))

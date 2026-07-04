@@ -27,8 +27,17 @@ func NewUploadHandler(storage *storage.Client) *UploadHandler {
 	return &UploadHandler{storage: storage}
 }
 
+var allowedFolders = map[string]bool{
+	"videos":     true,
+	"avatars":    true,
+	"banners":    true,
+	"thumbnails": true,
+	"images":     true,
+}
+
 type presignUploadRequest struct {
 	Filename string `json:"filename"`
+	Folder   string `json:"folder"`
 }
 
 type presignUploadResponse struct {
@@ -43,13 +52,22 @@ func (h *UploadHandler) PresignUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	folder := req.Folder
+	if folder == "" {
+		folder = "videos"
+	}
+	if !allowedFolders[folder] {
+		http.Error(w, "invalid folder", http.StatusBadRequest)
+		return
+	}
+
 	user, _ := UserFromContext(r.Context())
 
 	ext := safeExt.ReplaceAllString(filepath.Ext(req.Filename), "")
 	if ext != "" {
 		ext = "." + ext
 	}
-	key := "videos/" + user.ID.String() + "/" + uuid.NewString() + ext
+	key := folder + "/" + user.ID.String() + "/" + uuid.NewString() + ext
 
 	uploadURL, publicURL, err := h.storage.PresignUpload(r.Context(), key, presignExpiry)
 	if err != nil {

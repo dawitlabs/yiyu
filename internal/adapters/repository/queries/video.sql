@@ -81,6 +81,29 @@ WHERE id != $1
 ORDER BY (channel_id = $2) DESC, views_count DESC
 LIMIT $4;
 
+-- name: ListLikedVideosByUser :many
+SELECT videos.* FROM video_interactions
+JOIN videos ON videos.id = video_interactions.video_id
+WHERE video_interactions.user_id = $1 AND video_interactions.type = 'like'
+ORDER BY video_interactions.created_at DESC
+LIMIT $2 OFFSET $3;
+
+-- name: ListTrendingVideos :many
+-- No view-event log exists (views_count is a running counter), so recency
+-- is approximated by upload window rather than true view-velocity — good
+-- enough at this scale, and needs no new schema.
+SELECT * FROM videos
+WHERE visibility = 'public' AND status = 'ready'
+  AND uploaded_at > NOW() - INTERVAL '7 days'
+ORDER BY views_count DESC
+LIMIT $1;
+
+-- name: SuggestVideoTitles :many
+SELECT DISTINCT title FROM videos
+WHERE visibility = 'public' AND status = 'ready'
+  AND lower(title) LIKE lower($1) || '%'
+LIMIT 8;
+
 -- name: AdminListVideos :many
 SELECT * FROM videos
 ORDER BY uploaded_at DESC

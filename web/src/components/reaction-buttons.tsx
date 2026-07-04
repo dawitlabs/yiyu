@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ThumbsDownIcon, ThumbsUpIcon } from "@/components/icons";
 
 type ReactionType = "like" | "dislike" | null;
 
@@ -45,30 +46,31 @@ export function ReactionButtons({
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center rounded-full border border-black/15 dark:border-white/15">
       <button
         type="button"
         disabled={isPending}
         onClick={() => react("like")}
-        className={`rounded-full border px-3 py-1.5 text-sm disabled:opacity-50 ${
-          reaction === "like"
-            ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
-            : "border-black/15 dark:border-white/15"
+        aria-label="Like"
+        className={`flex items-center gap-2 rounded-l-full px-3 py-1.5 text-sm disabled:opacity-50 ${
+          reaction === "like" ? "bg-black/10 dark:bg-white/15" : ""
         }`}
       >
-        Like · {likes}
+        <ThumbsUpIcon className="h-4 w-4" />
+        {likes}
       </button>
+      <span className="h-5 w-px bg-black/15 dark:bg-white/15" />
       <button
         type="button"
         disabled={isPending}
         onClick={() => react("dislike")}
-        className={`rounded-full border px-3 py-1.5 text-sm disabled:opacity-50 ${
-          reaction === "dislike"
-            ? "border-black bg-black text-white dark:border-white dark:bg-white dark:text-black"
-            : "border-black/15 dark:border-white/15"
+        aria-label="Dislike"
+        className={`flex items-center gap-2 rounded-r-full px-3 py-1.5 text-sm disabled:opacity-50 ${
+          reaction === "dislike" ? "bg-black/10 dark:bg-white/15" : ""
         }`}
       >
-        Dislike · {dislikes}
+        <ThumbsDownIcon className="h-4 w-4" />
+        {dislikes}
       </button>
     </div>
   );

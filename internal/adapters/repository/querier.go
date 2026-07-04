@@ -13,6 +13,7 @@ import (
 
 type Querier interface {
 	AddVideoToPlaylist(ctx context.Context, arg AddVideoToPlaylistParams) (PlaylistVideo, error)
+	AddWatchLater(ctx context.Context, arg AddWatchLaterParams) error
 	AdjustChannelSubscriberCount(ctx context.Context, arg AdjustChannelSubscriberCountParams) (Channel, error)
 	AdjustVideoReactionCounts(ctx context.Context, arg AdjustVideoReactionCountsParams) (Video, error)
 	// ==================== ADMIN QUERIES ====================
@@ -87,6 +88,7 @@ type Querier interface {
 	IncrementVideoDislikes(ctx context.Context, id uuid.UUID) (Video, error)
 	IncrementVideoLikes(ctx context.Context, id uuid.UUID) (Video, error)
 	IncrementVideoViews(ctx context.Context, id uuid.UUID) (Video, error)
+	IsInWatchLater(ctx context.Context, arg IsInWatchLaterParams) (bool, error)
 	// Same as ListPlaylistsByChannel but includes private playlists — only
 	// meant to be used once the caller is confirmed as the channel's owner.
 	ListAllPlaylistsByChannel(ctx context.Context, arg ListAllPlaylistsByChannelParams) ([]Playlist, error)
@@ -99,6 +101,7 @@ type Querier interface {
 	// ListCommentReplies, not mixed flat into the same list.
 	ListCommentsByVideo(ctx context.Context, arg ListCommentsByVideoParams) ([]ListCommentsByVideoRow, error)
 	ListCommunityPostsByChannel(ctx context.Context, arg ListCommunityPostsByChannelParams) ([]CommunityPost, error)
+	ListLikedVideosByUser(ctx context.Context, arg ListLikedVideosByUserParams) ([]Video, error)
 	// Small table (one row per channel that's ever gone live) — a full scan
 	// every poll interval is cheap enough that indexing by status isn't needed.
 	ListLiveStreams(ctx context.Context) ([]LiveStream, error)
@@ -115,12 +118,19 @@ type Querier interface {
 	// category, ranked by views. Good enough at this scale.
 	ListRelatedVideos(ctx context.Context, arg ListRelatedVideosParams) ([]Video, error)
 	ListSubscriptionFeed(ctx context.Context, arg ListSubscriptionFeedParams) ([]Video, error)
+	// No view-event log exists (views_count is a running counter), so recency
+	// is approximated by upload window rather than true view-velocity — good
+	// enough at this scale, and needs no new schema.
+	ListTrendingVideos(ctx context.Context, limit int32) ([]Video, error)
 	ListVideosByChannel(ctx context.Context, arg ListVideosByChannelParams) ([]Video, error)
 	ListWatchHistory(ctx context.Context, arg ListWatchHistoryParams) ([]Video, error)
+	ListWatchLater(ctx context.Context, arg ListWatchLaterParams) ([]Video, error)
 	MarkNotificationRead(ctx context.Context, arg MarkNotificationReadParams) (Notification, error)
 	RemoveVideoFromPlaylist(ctx context.Context, arg RemoveVideoFromPlaylistParams) error
+	RemoveWatchLater(ctx context.Context, arg RemoveWatchLaterParams) error
 	SearchVideos(ctx context.Context, arg SearchVideosParams) ([]Video, error)
 	SetLiveStreamStatus(ctx context.Context, arg SetLiveStreamStatusParams) error
+	SuggestVideoTitles(ctx context.Context, lower string) ([]string, error)
 	UpdateChannel(ctx context.Context, arg UpdateChannelParams) (Channel, error)
 	UpdateLiveStreamTitle(ctx context.Context, arg UpdateLiveStreamTitleParams) (LiveStream, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)

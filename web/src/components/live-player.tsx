@@ -2,6 +2,7 @@
 
 import Hls from "hls.js";
 import { useEffect, useRef } from "react";
+import { VideoPlayerShell } from "@/components/video-controls";
 
 // Live playback only — no view/progress tracking like VideoPlayer has,
 // since there's no video row to attach that history to.
@@ -37,13 +38,33 @@ export function LivePlayer({ hlsUrl }: { hlsUrl: string }) {
     hls.on(Hls.Events.MANIFEST_PARSED, () => {
       videoEl.play().catch(() => {});
     });
+    // Without this, a fatal error (a network blip, a codec the browser
+    // rejects) leaves playback silently stuck forever — hls.js's own
+    // recommended recovery is to reload on a network error and attempt a
+    // MediaSource recover on a media error; anything else isn't recoverable.
+    hls.on(Hls.Events.ERROR, (_event, data) => {
+      if (!data.fatal) {
+        return;
+      }
+      switch (data.type) {
+        case Hls.ErrorTypes.NETWORK_ERROR:
+          hls.startLoad();
+          break;
+        case Hls.ErrorTypes.MEDIA_ERROR:
+          hls.recoverMediaError();
+          break;
+        default:
+          hls.destroy();
+          break;
+      }
+    });
     return () => hls.destroy();
   }, [hlsUrl]);
 
   return (
-    <div className="aspect-video overflow-hidden rounded-lg bg-black">
+    <VideoPlayerShell videoRef={videoRef} isLive>
       {/* biome-ignore lint/a11y/useMediaCaption: live stream, no track source exists */}
-      <video ref={videoRef} controls className="h-full w-full" />
-    </div>
+      <video ref={videoRef} className="h-full w-full" />
+    </VideoPlayerShell>
   );
 }

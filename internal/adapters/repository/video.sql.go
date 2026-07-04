@@ -352,6 +352,60 @@ func (q *Queries) IncrementVideoViews(ctx context.Context, id uuid.UUID) (Video,
 	return i, err
 }
 
+const listLikedVideosByUser = `-- name: ListLikedVideosByUser :many
+SELECT videos.id, videos.channel_id, videos.title, videos.description, videos.status, videos.visibility, videos.views_count, videos.likes_count, videos.dislikes_count, videos.thumbnail_url, videos.original_url, videos.hls_playlist_url, videos.category, videos.tags, videos.uploaded_at, videos.published_at, videos.created_at, videos.updated_at, videos.duration FROM video_interactions
+JOIN videos ON videos.id = video_interactions.video_id
+WHERE video_interactions.user_id = $1 AND video_interactions.type = 'like'
+ORDER BY video_interactions.created_at DESC
+LIMIT $2 OFFSET $3
+`
+
+type ListLikedVideosByUserParams struct {
+	UserID pgtype.UUID `db:"user_id" json:"user_id"`
+	Limit  int32       `db:"limit" json:"limit"`
+	Offset int32       `db:"offset" json:"offset"`
+}
+
+func (q *Queries) ListLikedVideosByUser(ctx context.Context, arg ListLikedVideosByUserParams) ([]Video, error) {
+	rows, err := q.db.Query(ctx, listLikedVideosByUser, arg.UserID, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Video
+	for rows.Next() {
+		var i Video
+		if err := rows.Scan(
+			&i.ID,
+			&i.ChannelID,
+			&i.Title,
+			&i.Description,
+			&i.Status,
+			&i.Visibility,
+			&i.ViewsCount,
+			&i.LikesCount,
+			&i.DislikesCount,
+			&i.ThumbnailUrl,
+			&i.OriginalUrl,
+			&i.HlsPlaylistUrl,
+			&i.Category,
+			&i.Tags,
+			&i.UploadedAt,
+			&i.PublishedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Duration,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listPersonalizedFeed = `-- name: ListPersonalizedFeed :many
 WITH watched_categories AS (
     SELECT v.category, COUNT(*) AS watch_count
@@ -536,6 +590,57 @@ func (q *Queries) ListRelatedVideos(ctx context.Context, arg ListRelatedVideosPa
 	return items, nil
 }
 
+const listTrendingVideos = `-- name: ListTrendingVideos :many
+SELECT id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration FROM videos
+WHERE visibility = 'public' AND status = 'ready'
+  AND uploaded_at > NOW() - INTERVAL '7 days'
+ORDER BY views_count DESC
+LIMIT $1
+`
+
+// No view-event log exists (views_count is a running counter), so recency
+// is approximated by upload window rather than true view-velocity — good
+// enough at this scale, and needs no new schema.
+func (q *Queries) ListTrendingVideos(ctx context.Context, limit int32) ([]Video, error) {
+	rows, err := q.db.Query(ctx, listTrendingVideos, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Video
+	for rows.Next() {
+		var i Video
+		if err := rows.Scan(
+			&i.ID,
+			&i.ChannelID,
+			&i.Title,
+			&i.Description,
+			&i.Status,
+			&i.Visibility,
+			&i.ViewsCount,
+			&i.LikesCount,
+			&i.DislikesCount,
+			&i.ThumbnailUrl,
+			&i.OriginalUrl,
+			&i.HlsPlaylistUrl,
+			&i.Category,
+			&i.Tags,
+			&i.UploadedAt,
+			&i.PublishedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Duration,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listVideosByChannel = `-- name: ListVideosByChannel :many
 SELECT id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration FROM videos WHERE channel_id = $1 ORDER BY uploaded_at DESC LIMIT $2 OFFSET $3
 `
@@ -635,6 +740,33 @@ func (q *Queries) SearchVideos(ctx context.Context, arg SearchVideosParams) ([]V
 			return nil, err
 		}
 		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const suggestVideoTitles = `-- name: SuggestVideoTitles :many
+SELECT DISTINCT title FROM videos
+WHERE visibility = 'public' AND status = 'ready'
+  AND lower(title) LIKE lower($1) || '%'
+LIMIT 8
+`
+
+func (q *Queries) SuggestVideoTitles(ctx context.Context, lower string) ([]string, error) {
+	rows, err := q.db.Query(ctx, suggestVideoTitles, lower)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []string
+	for rows.Next() {
+		var title string
+		if err := rows.Scan(&title); err != nil {
+			return nil, err
+		}
+		items = append(items, title)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

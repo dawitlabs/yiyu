@@ -1,18 +1,14 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Roboto } from "next/font/google";
 import "./globals.css";
-import { Nav } from "@/components/nav";
+import { AppShell } from "@/components/app-shell";
 import { serverFetch } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
 import { getMyChannel } from "@/lib/my-channel";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const roboto = Roboto({
+  variable: "--font-roboto",
+  weight: ["400", "500", "700"],
   subsets: ["latin"],
 });
 
@@ -39,17 +35,15 @@ export default async function RootLayout({
   }
 
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col">
-        <Nav
+    <html lang="en" className={`${roboto.variable} h-full antialiased`}>
+      <body className="flex min-h-full flex-col">
+        <AppShell
           user={user}
           channel={channel}
           unreadNotifications={unreadNotifications}
-        />
-        <main className="flex-1">{children}</main>
+        >
+          {children}
+        </AppShell>
       </body>
     </html>
   );

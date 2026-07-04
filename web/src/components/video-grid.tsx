@@ -19,7 +19,7 @@ function VideoCard({ video }: { video: Video }) {
   return (
     <div className="flex flex-col gap-2">
       <Link href={`/watch/${video.id}`}>
-        <div className="aspect-video overflow-hidden rounded-md bg-black/5 dark:bg-white/10">
+        <div className="aspect-video overflow-hidden rounded-lg bg-black/5 dark:bg-white/10">
           {video.thumbnail_url && (
             // biome-ignore lint/performance/noImgElement: thumbnail_url is an arbitrary external host, next/image's remotePatterns can't allowlist unknown hosts
             <img

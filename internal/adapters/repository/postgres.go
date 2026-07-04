@@ -152,6 +152,34 @@ func (r *PostgresRepository) GetVideoInteraction(ctx context.Context, arg GetVid
 	return r.queries.GetVideoInteraction(ctx, arg)
 }
 
+func (r *PostgresRepository) ListLikedVideosByUser(ctx context.Context, arg ListLikedVideosByUserParams) ([]Video, error) {
+	return r.queries.ListLikedVideosByUser(ctx, arg)
+}
+
+func (r *PostgresRepository) AddWatchLater(ctx context.Context, arg AddWatchLaterParams) error {
+	return r.queries.AddWatchLater(ctx, arg)
+}
+
+func (r *PostgresRepository) RemoveWatchLater(ctx context.Context, arg RemoveWatchLaterParams) error {
+	return r.queries.RemoveWatchLater(ctx, arg)
+}
+
+func (r *PostgresRepository) IsInWatchLater(ctx context.Context, arg IsInWatchLaterParams) (bool, error) {
+	return r.queries.IsInWatchLater(ctx, arg)
+}
+
+func (r *PostgresRepository) ListWatchLater(ctx context.Context, arg ListWatchLaterParams) ([]Video, error) {
+	return r.queries.ListWatchLater(ctx, arg)
+}
+
+func (r *PostgresRepository) ListTrendingVideos(ctx context.Context, limit int32) ([]Video, error) {
+	return r.queries.ListTrendingVideos(ctx, limit)
+}
+
+func (r *PostgresRepository) SuggestVideoTitles(ctx context.Context, prefix string) ([]string, error) {
+	return r.queries.SuggestVideoTitles(ctx, prefix)
+}
+
 func (r *PostgresRepository) CreateChannel(ctx context.Context, arg CreateChannelParams) (Channel, error) {
 	return r.queries.CreateChannel(ctx, arg)
 }

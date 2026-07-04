@@ -472,6 +472,137 @@ func (h *VideoHandler) GetMyReaction(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, myReactionResponse{Type: &interaction.Type})
 }
 
+func (h *VideoHandler) ListLikedVideos(w http.ResponseWriter, r *http.Request) {
+	user, _ := UserFromContext(r.Context())
+	limit, offset := parseLimitOffset(r)
+
+	videos, err := h.repo.ListLikedVideosByUser(r.Context(), repository.ListLikedVideosByUserParams{
+		UserID: pgtype.UUID{Bytes: user.ID, Valid: true},
+		Limit:  limit,
+		Offset: offset,
+	})
+	if err != nil {
+		slog.Error("list liked videos", "error", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toVideoResponses(r.Context(), h.repo, videos))
+}
+
+func (h *VideoHandler) AddWatchLater(w http.ResponseWriter, r *http.Request) {
+	videoID, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "invalid video id", http.StatusBadRequest)
+		return
+	}
+	user, _ := UserFromContext(r.Context())
+
+	if err := h.repo.AddWatchLater(r.Context(), repository.AddWatchLaterParams{
+		UserID:  user.ID,
+		VideoID: videoID,
+	}); err != nil {
+		slog.Error("add watch later", "error", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *VideoHandler) RemoveWatchLater(w http.ResponseWriter, r *http.Request) {
+	videoID, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "invalid video id", http.StatusBadRequest)
+		return
+	}
+	user, _ := UserFromContext(r.Context())
+
+	if err := h.repo.RemoveWatchLater(r.Context(), repository.RemoveWatchLaterParams{
+		UserID:  user.ID,
+		VideoID: videoID,
+	}); err != nil {
+		slog.Error("remove watch later", "error", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+type watchLaterStatusResponse struct {
+	InWatchLater bool `json:"in_watch_later"`
+}
+
+func (h *VideoHandler) GetWatchLaterStatus(w http.ResponseWriter, r *http.Request) {
+	videoID, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "invalid video id", http.StatusBadRequest)
+		return
+	}
+	user, _ := UserFromContext(r.Context())
+
+	inWatchLater, err := h.repo.IsInWatchLater(r.Context(), repository.IsInWatchLaterParams{
+		UserID:  user.ID,
+		VideoID: videoID,
+	})
+	if err != nil {
+		slog.Error("get watch later status", "error", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, watchLaterStatusResponse{InWatchLater: inWatchLater})
+}
+
+func (h *VideoHandler) ListWatchLater(w http.ResponseWriter, r *http.Request) {
+	user, _ := UserFromContext(r.Context())
+	limit, offset := parseLimitOffset(r)
+
+	videos, err := h.repo.ListWatchLater(r.Context(), repository.ListWatchLaterParams{
+		UserID: user.ID,
+		Limit:  limit,
+		Offset: offset,
+	})
+	if err != nil {
+		slog.Error("list watch later", "error", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toVideoResponses(r.Context(), h.repo, videos))
+}
+
+func (h *VideoHandler) ListTrendingVideos(w http.ResponseWriter, r *http.Request) {
+	limit, _ := parseLimitOffset(r)
+
+	videos, err := h.repo.ListTrendingVideos(r.Context(), limit)
+	if err != nil {
+		slog.Error("list trending videos", "error", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toVideoResponses(r.Context(), h.repo, videos))
+}
+
+func (h *VideoHandler) SuggestVideoTitles(w http.ResponseWriter, r *http.Request) {
+	query := r.URL.Query().Get("q")
+	if query == "" {
+		writeJSON(w, http.StatusOK, []string{})
+		return
+	}
+
+	titles, err := h.repo.SuggestVideoTitles(r.Context(), query)
+	if err != nil {
+		slog.Error("suggest video titles", "error", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, titles)
+}
+
 func (h *VideoHandler) SearchVideos(w http.ResponseWriter, r *http.Request) {
 	query := r.URL.Query().Get("q")
 	if query == "" {

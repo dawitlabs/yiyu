@@ -252,3 +252,9 @@ type WatchHistory struct {
 	Progress  pgtype.Int4        `db:"progress" json:"progress"`
 	Completed pgtype.Bool        `db:"completed" json:"completed"`
 }
+
+type WatchLater struct {
+	UserID    uuid.UUID          `db:"user_id" json:"user_id"`
+	VideoID   uuid.UUID          `db:"video_id" json:"video_id"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+}

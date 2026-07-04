@@ -2,14 +2,10 @@
 
 import Hls from "hls.js";
 import { useEffect, useRef } from "react";
+import { VideoPlayerShell } from "@/components/video-controls";
 import type { Caption } from "@/lib/captions";
 import type { Chapter } from "@/lib/chapters";
-
-function formatTimestamp(seconds: number): string {
-  const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
-  return `${mins}:${secs.toString().padStart(2, "0")}`;
-}
+import { formatTimestamp } from "@/lib/format";
 
 // Owns the <video> element so it can hook play/ended directly — view
 // recording and watch-history progress both need real playback events,
@@ -29,6 +25,7 @@ export function VideoPlayer({
   chapters?: Chapter[];
 }) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const hlsRef = useRef<Hls | null>(null);
   const hasStarted = useRef(false);
 
   useEffect(() => {
@@ -54,9 +51,13 @@ export function VideoPlayer({
     }
 
     const hls = new Hls();
+    hlsRef.current = hls;
     hls.loadSource(src);
     hls.attachMedia(videoEl);
-    return () => hls.destroy();
+    return () => {
+      hlsRef.current = null;
+      hls.destroy();
+    };
   }, [src]);
 
   function handlePlay() {
@@ -92,12 +93,15 @@ export function VideoPlayer({
 
   return (
     <div>
-      <div className="aspect-video overflow-hidden rounded-lg bg-black">
+      <VideoPlayerShell
+        videoRef={videoRef}
+        hlsRef={hlsRef}
+        hasCaptions={captions.length > 0}
+      >
         {/* biome-ignore lint/a11y/useMediaCaption: tracks come from a dynamic captions array; biome can't verify one is always present, but real videos with caption tracks uploaded do have one */}
         <video
           ref={videoRef}
           src={src.endsWith(".m3u8") ? undefined : src}
-          controls
           onPlay={handlePlay}
           onEnded={handleEnded}
           className="h-full w-full"
@@ -113,7 +117,7 @@ export function VideoPlayer({
             />
           ))}
         </video>
-      </div>
+      </VideoPlayerShell>
 
       {chapters.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-2">

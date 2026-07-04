@@ -1,8 +1,10 @@
 "use client";
 
 import { type SubmitEvent, useState } from "react";
+import { Avatar } from "@/components/avatar";
 import { ReportButton } from "@/components/report-button";
 import type { Comment } from "@/lib/comments";
+import { formatRelativeTime } from "@/lib/format";
 
 function CommentRow({
   comment,
@@ -50,25 +52,33 @@ function CommentRow({
 
   return (
     <div className="flex items-start justify-between gap-4">
-      <div>
-        <p className="text-sm font-medium">{comment.author.username}</p>
-        <p className="text-sm text-black/80 dark:text-white/80">
-          {comment.content}
-        </p>
-        {currentUserId && (
-          <button
-            type="button"
-            disabled={isLiking}
-            onClick={handleLike}
-            className={`mt-1 text-xs hover:underline disabled:opacity-50 ${
-              liked
-                ? "text-black dark:text-white"
-                : "text-black/60 dark:text-white/60"
-            }`}
-          >
-            Like{likesCount > 0 ? ` · ${likesCount}` : ""}
-          </button>
-        )}
+      <div className="flex items-start gap-3">
+        <Avatar src="" name={comment.author.username} size="sm" />
+        <div>
+          <p className="text-sm">
+            <span className="font-medium">{comment.author.username}</span>{" "}
+            <span className="text-black/60 text-xs dark:text-white/60">
+              {formatRelativeTime(comment.created_at)}
+            </span>
+          </p>
+          <p className="text-sm text-black/80 dark:text-white/80">
+            {comment.content}
+          </p>
+          {currentUserId && (
+            <button
+              type="button"
+              disabled={isLiking}
+              onClick={handleLike}
+              className={`mt-1 text-xs hover:underline disabled:opacity-50 ${
+                liked
+                  ? "text-black dark:text-white"
+                  : "text-black/60 dark:text-white/60"
+              }`}
+            >
+              Like{likesCount > 0 ? ` · ${likesCount}` : ""}
+            </button>
+          )}
+        </div>
       </div>
       <div className="flex shrink-0 items-center gap-3 text-xs">
         {currentUserId && currentUserId !== comment.author.id && (

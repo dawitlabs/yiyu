@@ -61,6 +61,13 @@ type VideoRepository interface {
 	ListPersonalizedFeed(ctx context.Context, arg repository.ListPersonalizedFeedParams) ([]repository.Video, error)
 	ListRelatedVideos(ctx context.Context, arg repository.ListRelatedVideosParams) ([]repository.Video, error)
 	GetVideoInteraction(ctx context.Context, arg repository.GetVideoInteractionParams) (repository.VideoInteraction, error)
+	ListLikedVideosByUser(ctx context.Context, arg repository.ListLikedVideosByUserParams) ([]repository.Video, error)
+	AddWatchLater(ctx context.Context, arg repository.AddWatchLaterParams) error
+	RemoveWatchLater(ctx context.Context, arg repository.RemoveWatchLaterParams) error
+	IsInWatchLater(ctx context.Context, arg repository.IsInWatchLaterParams) (bool, error)
+	ListWatchLater(ctx context.Context, arg repository.ListWatchLaterParams) ([]repository.Video, error)
+	ListTrendingVideos(ctx context.Context, limit int32) ([]repository.Video, error)
+	SuggestVideoTitles(ctx context.Context, prefix string) ([]string, error)
 	SearchVideos(ctx context.Context, arg repository.SearchVideosParams) ([]repository.Video, error)
 	AdminListVideos(ctx context.Context, arg repository.AdminListVideosParams) ([]repository.Video, error)
 	AdminDeleteVideo(ctx context.Context, id uuid.UUID) error

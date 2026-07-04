@@ -1,26 +1,40 @@
 @import "tailwindcss";
 
+/* === youtube-com design tokens — applied by /design on 2026-07-04 === */
+/* Source: https://youtube.com/ */
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0f0f0f;
+  --border: #eeeeee;
+  --accent: #065fd4;
+  --muted-foreground: #666666;
+
+  --radius-pill: 9999px;
+  --radius-card: 8px;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --font-sans: var(--font-roboto);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0f0f0f;
+    --foreground: #f1f1f1;
+    --border: #272727;
+    --accent: #3ea6ff;
+    --muted-foreground: #aaaaaa;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-roboto), Arial, Helvetica, sans-serif;
 }
+/* === end youtube-com tokens === */
