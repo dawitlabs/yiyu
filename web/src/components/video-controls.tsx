@@ -4,6 +4,7 @@ import Hls from "hls.js";
 import { type RefObject, useEffect, useRef, useState } from "react";
 import { PictureInPictureIcon, SettingsIcon } from "@/components/icons";
 import { PopoverButton } from "@/components/popover-button";
+import type { Chapter } from "@/lib/chapters";
 import { formatTimestamp } from "@/lib/format";
 import {
   loadPlayerPreferences,
@@ -102,11 +103,13 @@ function SeekBar({
   currentTime,
   duration,
   bufferedEnd,
+  chapters,
   onSeek,
 }: {
   currentTime: number;
   duration: number;
   bufferedEnd: number;
+  chapters?: Chapter[];
   onSeek: (seconds: number) => void;
 }) {
   const trackRef = useRef<HTMLDivElement>(null);
@@ -153,6 +156,15 @@ function SeekBar({
         className="absolute inset-y-0 left-0 rounded-full bg-[var(--accent)]"
         style={{ width: `${playedPct}%` }}
       />
+      {duration > 0 &&
+        chapters?.map((chapter) => (
+          <div
+            key={chapter.id}
+            title={chapter.title}
+            className="absolute inset-y-0 w-px bg-black/40"
+            style={{ left: `${(chapter.start_seconds / duration) * 100}%` }}
+          />
+        ))}
       <div
         className="-translate-y-1/2 -translate-x-1/2 absolute top-1/2 h-3 w-3 rounded-full bg-[var(--accent)] opacity-0 group-hover/seek:opacity-100"
         style={{ left: `${playedPct}%` }}
@@ -170,16 +182,25 @@ export function VideoPlayerShell({
   hlsRef,
   isLive = false,
   hasCaptions = false,
+  chapters,
   children,
 }: {
   videoRef: RefObject<HTMLVideoElement | null>;
   hlsRef?: RefObject<Hls | null>;
   isLive?: boolean;
   hasCaptions?: boolean;
+  chapters?: Chapter[];
   children: React.ReactNode;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const sideClickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const seekFlashTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flashIdRef = useRef(0);
+  const [seekFlash, setSeekFlash] = useState<{
+    side: "left" | "right";
+    id: number;
+  } | null>(null);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -220,6 +241,10 @@ export function VideoPlayerShell({
       setVolumeState(video.volume);
       setIsMuted(video.muted);
     };
+    const onRateChange = () => setPlaybackRateState(video.playbackRate);
+    const onWaiting = () => setIsBuffering(true);
+    const onPlaying = () => setIsBuffering(false);
+    const onCanPlay = () => setIsBuffering(false);
 
     video.addEventListener("play", onPlay);
     video.addEventListener("pause", onPause);
@@ -227,6 +252,17 @@ export function VideoPlayerShell({
     video.addEventListener("durationchange", onDurationChange);
     video.addEventListener("progress", onProgress);
     video.addEventListener("volumechange", onVolumeChange);
+    video.addEventListener("ratechange", onRateChange);
+    video.addEventListener("waiting", onWaiting);
+    video.addEventListener("playing", onPlaying);
+    video.addEventListener("canplay", onCanPlay);
+
+    // Applied once here rather than via useState initializers — those run
+    // before the video element exists, too early to set anything on it.
+    const prefs = loadPlayerPreferences();
+    video.volume = prefs.volume;
+    video.muted = prefs.volume === 0;
+    video.playbackRate = prefs.playbackRate;
 
     // If metadata already loaded before this effect ran (e.g. a cached
     // local video loads faster than React's post-paint effect timing),
@@ -236,6 +272,7 @@ export function VideoPlayerShell({
     onTimeUpdate();
     onProgress();
     onVolumeChange();
+    onRateChange();
     if (!video.paused) {
       setIsPlaying(true);
     }
@@ -249,6 +286,10 @@ export function VideoPlayerShell({
       video.removeEventListener("durationchange", onDurationChange);
       video.removeEventListener("progress", onProgress);
       video.removeEventListener("volumechange", onVolumeChange);
+      video.removeEventListener("ratechange", onRateChange);
+      video.removeEventListener("waiting", onWaiting);
+      video.removeEventListener("playing", onPlaying);
+      video.removeEventListener("canplay", onCanPlay);
     };
   }, [videoRef, hasCaptions]);
 
@@ -260,6 +301,29 @@ export function VideoPlayerShell({
     return () =>
       document.removeEventListener("fullscreenchange", onFullscreenChange);
   }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) {
+      return;
+    }
+    setIsPiPSupported(
+      document.pictureInPictureEnabled && !video.disablePictureInPicture,
+    );
+
+    function onEnterPiP() {
+      setIsPiPActive(true);
+    }
+    function onLeavePiP() {
+      setIsPiPActive(false);
+    }
+    video.addEventListener("enterpictureinpicture", onEnterPiP);
+    video.addEventListener("leavepictureinpicture", onLeavePiP);
+    return () => {
+      video.removeEventListener("enterpictureinpicture", onEnterPiP);
+      video.removeEventListener("leavepictureinpicture", onLeavePiP);
+    };
+  }, [videoRef]);
 
   // No deps — same reasoning as the keydown effect below: the parent
   // creates the Hls instance in its own effect, which (React fires child
@@ -275,9 +339,17 @@ export function VideoPlayerShell({
       if (!hls) {
         return;
       }
-      setQualityLevels(
-        hls.levels.map((level, index) => ({ index, height: level.height })),
-      );
+      const levels = hls.levels.map((level, index) => ({
+        index,
+        height: level.height,
+      }));
+      setQualityLevels(levels);
+
+      const preferredHeight = loadPlayerPreferences().qualityHeight;
+      const match = levels.find((level) => level.height === preferredHeight);
+      if (match) {
+        hls.currentLevel = match.index;
+      }
     }
     function onLevelSwitched(_event: unknown, data: { level: number }) {
       setCurrentLevel(data.level);
@@ -341,6 +413,7 @@ export function VideoPlayerShell({
     const video = videoRef.current;
     if (video) {
       video.muted = !video.muted;
+      savePlayerPreferences({ volume: video.muted ? 0 : video.volume });
     }
   }
 
@@ -351,6 +424,7 @@ export function VideoPlayerShell({
     }
     video.volume = fraction;
     video.muted = fraction === 0;
+    savePlayerPreferences({ volume: fraction });
   }
 
   function toggleFullscreen() {
@@ -367,8 +441,32 @@ export function VideoPlayerShell({
 
   function selectQuality(levelIndex: number) {
     const hls = hlsRef?.current;
-    if (hls) {
-      hls.currentLevel = levelIndex;
+    if (!hls) {
+      return;
+    }
+    hls.currentLevel = levelIndex;
+    const level = qualityLevels.find((l) => l.index === levelIndex);
+    savePlayerPreferences({ qualityHeight: level?.height ?? null });
+  }
+
+  function setPlaybackRate(rate: number) {
+    const video = videoRef.current;
+    if (!video) {
+      return;
+    }
+    video.playbackRate = rate;
+    savePlayerPreferences({ playbackRate: rate });
+  }
+
+  function togglePictureInPicture() {
+    const video = videoRef.current;
+    if (!video) {
+      return;
+    }
+    if (document.pictureInPictureElement) {
+      document.exitPictureInPicture().catch(() => {});
+    } else {
+      video.requestPictureInPicture().catch(() => {});
     }
   }
 
@@ -381,6 +479,38 @@ export function VideoPlayerShell({
     const next = !captionsOn;
     track.mode = next ? "showing" : "hidden";
     setCaptionsOn(next);
+  }
+
+  // Double-click (not single) on the left/right thirds seeks +-10s, matching
+  // YouTube's own gesture — single-click anywhere (including these zones)
+  // still toggles play/pause. That needs real click-vs-double-click
+  // disambiguation, not just both firing: without the short delay, a real
+  // double-click would also fire two independent single-clicks first,
+  // visibly pausing-then-resuming before the seek landed. The center zone
+  // skips all this and keeps today's instant, undelayed toggle — most
+  // clicks land there, and delaying that would feel laggy for no reason.
+  function handleSideClick() {
+    if (sideClickTimerRef.current) {
+      clearTimeout(sideClickTimerRef.current);
+    }
+    sideClickTimerRef.current = setTimeout(() => {
+      sideClickTimerRef.current = null;
+      togglePlay();
+    }, 250);
+  }
+
+  function handleSideDoubleClick(side: "left" | "right") {
+    if (sideClickTimerRef.current) {
+      clearTimeout(sideClickTimerRef.current);
+      sideClickTimerRef.current = null;
+    }
+    skip(side === "left" ? -10 : 10);
+    flashIdRef.current += 1;
+    setSeekFlash({ side, id: flashIdRef.current });
+    if (seekFlashTimerRef.current) {
+      clearTimeout(seekFlashTimerRef.current);
+    }
+    seekFlashTimerRef.current = setTimeout(() => setSeekFlash(null), 650);
   }
 
   // Attached imperatively (not a JSX onKeyDown) so shortcuts fire no matter
@@ -397,6 +527,16 @@ export function VideoPlayerShell({
     container.tabIndex = 0;
 
     function onKeyDown(e: KeyboardEvent) {
+      // Number row seeks to N*10% of duration, same as YouTube — checked
+      // ahead of the switch since "any digit" doesn't fit a single case.
+      if (!isLive && duration > 0 && /^[0-9]$/.test(e.key)) {
+        const video = videoRef.current;
+        if (video) {
+          video.currentTime = (Number(e.key) / 10) * duration;
+        }
+        return;
+      }
+
       switch (e.key) {
         case " ":
         case "k":
@@ -408,6 +548,16 @@ export function VideoPlayerShell({
           break;
         case "ArrowRight":
           skip(5);
+          break;
+        case "j":
+          if (!isLive) {
+            skip(-10);
+          }
+          break;
+        case "l":
+          if (!isLive) {
+            skip(10);
+          }
           break;
         case "ArrowUp":
           e.preventDefault();
@@ -422,6 +572,37 @@ export function VideoPlayerShell({
           break;
         case "f":
           toggleFullscreen();
+          break;
+        // "," / "." step one frame (~1/30s, an approximation — no real
+        // per-video fps is exposed) when paused; Shift+,/. (reported by the
+        // browser as "<"/">" on a US layout) instead nudges playback speed.
+        case ",":
+        case "<":
+          if (e.shiftKey || e.key === "<") {
+            setPlaybackRate(Math.max(playbackRate - 0.25, 0.25));
+          } else if (!isLive && videoRef.current?.paused) {
+            skip(-1 / 30);
+          }
+          break;
+        case ".":
+        case ">":
+          if (e.shiftKey || e.key === ">") {
+            setPlaybackRate(Math.min(playbackRate + 0.25, 2));
+          } else if (!isLive && videoRef.current?.paused) {
+            skip(1 / 30);
+          }
+          break;
+        case "Home":
+          if (!isLive) {
+            e.preventDefault();
+            skip(-duration);
+          }
+          break;
+        case "End":
+          if (!isLive) {
+            e.preventDefault();
+            skip(duration);
+          }
           break;
         default:
           break;
@@ -442,18 +623,64 @@ export function VideoPlayerShell({
     >
       {children}
 
-      <button
-        type="button"
-        onClick={togglePlay}
-        aria-label={isPlaying ? "Pause" : "Play"}
-        className="absolute inset-0 flex items-center justify-center"
-      >
-        {!isPlaying && (
-          <span className="flex h-16 w-16 items-center justify-center rounded-full bg-black/50 text-white">
-            <PlayIcon />
-          </span>
-        )}
-      </button>
+      <div className="absolute inset-0 flex">
+        <button
+          type="button"
+          onClick={() => handleSideClick()}
+          onDoubleClick={() => handleSideDoubleClick("left")}
+          aria-label="Play/pause, double-click to rewind 10 seconds"
+          className="relative h-full w-1/3"
+        >
+          {seekFlash?.side === "left" && (
+            <span
+              key={seekFlash.id}
+              className="absolute inset-0 flex items-center justify-center text-sm text-white"
+            >
+              <span className="rounded-full bg-black/50 px-3 py-1.5">
+                « 10s
+              </span>
+            </span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={togglePlay}
+          aria-label={isPlaying ? "Pause" : "Play"}
+          className="flex h-full w-1/3 items-center justify-center"
+        >
+          {!isPlaying && (
+            <span className="flex h-16 w-16 items-center justify-center rounded-full bg-black/50 text-white">
+              <PlayIcon />
+            </span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => handleSideClick()}
+          onDoubleClick={() => handleSideDoubleClick("right")}
+          aria-label="Play/pause, double-click to skip ahead 10 seconds"
+          className="relative h-full w-1/3"
+        >
+          {seekFlash?.side === "right" && (
+            <span
+              key={seekFlash.id}
+              className="absolute inset-0 flex items-center justify-center text-sm text-white"
+            >
+              <span className="rounded-full bg-black/50 px-3 py-1.5">
+                10s »
+              </span>
+            </span>
+          )}
+        </button>
+      </div>
+
+      {isBuffering && (
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <span className="h-10 w-10 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+        </div>
+      )}
 
       <div
         className={`absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent px-3 pb-2 pt-6 transition-opacity ${
@@ -465,6 +692,7 @@ export function VideoPlayerShell({
             currentTime={currentTime}
             duration={duration}
             bufferedEnd={bufferedEnd}
+            chapters={chapters}
             onSeek={(seconds) => {
               const video = videoRef.current;
               if (video) {
@@ -526,6 +754,43 @@ export function VideoPlayerShell({
               }`}
             >
               <CaptionsIcon />
+            </button>
+          )}
+
+          <PopoverButton
+            align="right"
+            ariaLabel="Playback speed"
+            buttonClassName="rounded-full px-2 py-1 text-xs hover:bg-white/15"
+            buttonContent={`${playbackRate}x`}
+          >
+            <div className="min-w-20 rounded-lg border border-white/10 bg-black/90 py-1 text-sm text-white shadow-lg">
+              {PLAYBACK_RATES.map((rate) => (
+                <button
+                  key={rate}
+                  type="button"
+                  onClick={() => setPlaybackRate(rate)}
+                  className={`block w-full px-3 py-1.5 text-left hover:bg-white/10 ${
+                    playbackRate === rate ? "font-medium" : "text-white/70"
+                  }`}
+                >
+                  {rate}x
+                </button>
+              ))}
+            </div>
+          </PopoverButton>
+
+          {isPiPSupported && (
+            <button
+              type="button"
+              onClick={togglePictureInPicture}
+              aria-label={
+                isPiPActive
+                  ? "Exit picture-in-picture"
+                  : "Enter picture-in-picture"
+              }
+              className="rounded-full p-1 hover:bg-white/15"
+            >
+              <PictureInPictureIcon />
             </button>
           )}
 

@@ -24,6 +24,7 @@ type Repository interface {
 	AnalyticsRepository
 	CommunityPostRepository
 	LiveStreamRepository
+	EndScreenRepository
 
 	// WithTx runs fn inside a single transaction, giving it access to every
 	// query method (repository.Querier is the full sqlc-generated set) —
@@ -74,6 +75,8 @@ type VideoRepository interface {
 	ClaimNextPendingVideo(ctx context.Context) (repository.Video, error)
 	CompleteVideoProcessing(ctx context.Context, arg repository.CompleteVideoProcessingParams) (repository.Video, error)
 	FailVideoProcessing(ctx context.Context, id uuid.UUID) error
+	UpdateVideo(ctx context.Context, arg repository.UpdateVideoParams) (repository.Video, error)
+	ListShorts(ctx context.Context, arg repository.ListShortsParams) ([]repository.Video, error)
 }
 
 type ChannelRepository interface {
@@ -163,6 +166,13 @@ type AnalyticsRepository interface {
 	GetChannelAnalyticsSummary(ctx context.Context, channelID pgtype.UUID) (repository.GetChannelAnalyticsSummaryRow, error)
 	ListChannelVideoStats(ctx context.Context, arg repository.ListChannelVideoStatsParams) ([]repository.ListChannelVideoStatsRow, error)
 	CountNewSubscribersSince(ctx context.Context, arg repository.CountNewSubscribersSinceParams) (int64, error)
+}
+
+type EndScreenRepository interface {
+	CreateEndScreen(ctx context.Context, arg repository.CreateEndScreenParams) (repository.VideoEndScreen, error)
+	ListEndScreensByVideo(ctx context.Context, videoID uuid.UUID) ([]repository.VideoEndScreen, error)
+	GetEndScreenByID(ctx context.Context, id uuid.UUID) (repository.VideoEndScreen, error)
+	DeleteEndScreen(ctx context.Context, id uuid.UUID) error
 }
 
 // Compile-time guard: PostgresRepository must satisfy Repository in full.

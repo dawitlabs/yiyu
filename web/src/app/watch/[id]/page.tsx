@@ -23,7 +23,7 @@ import type { Chapter } from "@/lib/chapters";
 import type { Comment } from "@/lib/comments";
 import { getMyChannel } from "@/lib/my-channel";
 import type { Playlist } from "@/lib/playlists";
-import type { Video } from "@/lib/videos";
+import type { EndScreen, Video } from "@/lib/videos";
 
 export default async function WatchPage({
   params,
@@ -38,6 +38,7 @@ export default async function WatchPage({
     relatedRes,
     captionsRes,
     chaptersRes,
+    endScreensRes,
     user,
     myChannel,
   ] = await Promise.all([
@@ -46,6 +47,7 @@ export default async function WatchPage({
     serverFetch(`/videos/${id}/related`),
     serverFetch(`/videos/${id}/captions`),
     serverFetch(`/videos/${id}/chapters`),
+    serverFetch(`/videos/${id}/end-screens`),
     getCurrentUser(),
     getMyChannel(),
   ]);
@@ -58,6 +60,7 @@ export default async function WatchPage({
   const relatedVideos: Video[] = relatedRes.ok ? await relatedRes.json() : [];
   const captions: Caption[] = captionsRes.ok ? await captionsRes.json() : [];
   const chapters: Chapter[] = chaptersRes.ok ? await chaptersRes.json() : [];
+  const endScreens: EndScreen[] = endScreensRes.ok ? await endScreensRes.json() : [];
   const isOwner = myChannel?.id === video.channel_id;
 
   const channelRes = await serverFetch(`/channels/${video.channel_handle}`);
@@ -112,8 +115,28 @@ export default async function WatchPage({
           canRecordHistory={user !== null}
           captions={captions}
           chapters={chapters}
+          endScreens={endScreens}
+          nextVideo={
+            relatedVideos[0]
+              ? {
+                  id: relatedVideos[0].id,
+                  title: relatedVideos[0].title,
+                  thumbnailUrl: relatedVideos[0].thumbnail_url,
+                }
+              : undefined
+          }
         />
 
+        {isOwner && (
+          <div className="mt-2 flex gap-2">
+            <Link
+              href={`/watch/${video.id}/edit`}
+              className="rounded-md border border-black/15 px-3 py-1.5 text-sm hover:bg-black/5 dark:border-white/15 dark:hover:bg-white/5"
+            >
+              Edit video
+            </Link>
+          </div>
+        )}
         {isOwner && (
           <>
             <CaptionManager videoId={video.id} initialCaptions={captions} />

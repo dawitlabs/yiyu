@@ -12,7 +12,7 @@ import (
 )
 
 const listWatchHistory = `-- name: ListWatchHistory :many
-SELECT videos.id, videos.channel_id, videos.title, videos.description, videos.status, videos.visibility, videos.views_count, videos.likes_count, videos.dislikes_count, videos.thumbnail_url, videos.original_url, videos.hls_playlist_url, videos.category, videos.tags, videos.uploaded_at, videos.published_at, videos.created_at, videos.updated_at, videos.duration
+SELECT videos.id, videos.channel_id, videos.title, videos.description, videos.status, videos.visibility, videos.views_count, videos.likes_count, videos.dislikes_count, videos.thumbnail_url, videos.original_url, videos.hls_playlist_url, videos.category, videos.tags, videos.uploaded_at, videos.published_at, videos.created_at, videos.updated_at, videos.duration, videos.is_short
 FROM watch_history
 JOIN videos ON videos.id = watch_history.video_id
 WHERE watch_history.user_id = $1
@@ -55,6 +55,7 @@ func (q *Queries) ListWatchHistory(ctx context.Context, arg ListWatchHistoryPara
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Duration,
+			&i.IsShort,
 		); err != nil {
 			return nil, err
 		}

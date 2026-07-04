@@ -17,7 +17,7 @@ UPDATE videos
 SET likes_count = likes_count + $1::bigint,
     dislikes_count = dislikes_count + $2::bigint
 WHERE id = $3
-RETURNING id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration
+RETURNING id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration, is_short
 `
 
 type AdjustVideoReactionCountsParams struct {
@@ -49,6 +49,7 @@ func (q *Queries) AdjustVideoReactionCounts(ctx context.Context, arg AdjustVideo
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Duration,
+		&i.IsShort,
 	)
 	return i, err
 }

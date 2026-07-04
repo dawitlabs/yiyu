@@ -140,7 +140,7 @@ func (q *Queries) ListAllPlaylistsByChannel(ctx context.Context, arg ListAllPlay
 }
 
 const listPlaylistVideos = `-- name: ListPlaylistVideos :many
-SELECT videos.id, videos.channel_id, videos.title, videos.description, videos.status, videos.visibility, videos.views_count, videos.likes_count, videos.dislikes_count, videos.thumbnail_url, videos.original_url, videos.hls_playlist_url, videos.category, videos.tags, videos.uploaded_at, videos.published_at, videos.created_at, videos.updated_at, videos.duration
+SELECT videos.id, videos.channel_id, videos.title, videos.description, videos.status, videos.visibility, videos.views_count, videos.likes_count, videos.dislikes_count, videos.thumbnail_url, videos.original_url, videos.hls_playlist_url, videos.category, videos.tags, videos.uploaded_at, videos.published_at, videos.created_at, videos.updated_at, videos.duration, videos.is_short
 FROM playlist_videos
 JOIN videos ON videos.id = playlist_videos.video_id
 WHERE playlist_videos.playlist_id = $1
@@ -176,6 +176,7 @@ func (q *Queries) ListPlaylistVideos(ctx context.Context, playlistID uuid.UUID) 
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Duration,
+			&i.IsShort,
 		); err != nil {
 			return nil, err
 		}

@@ -7,6 +7,7 @@ import {
   ChannelsIcon,
   HistoryIcon,
   HomeIcon,
+  ShortsIcon,
   SubscriptionsIcon,
   ThumbsUpIcon,
   TrendingIcon,
@@ -14,6 +15,12 @@ import {
 
 const ITEMS = [
   { href: "/", label: "Home", icon: HomeIcon, requiresAuth: false },
+  {
+    href: "/shorts",
+    label: "Shorts",
+    icon: ShortsIcon,
+    requiresAuth: false,
+  },
   {
     href: "/trending",
     label: "Trending",

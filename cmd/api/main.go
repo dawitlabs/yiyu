@@ -81,6 +81,7 @@ func main() {
 		getEnv("MEDIAMTX_WHIP_URL", "http://localhost:8889"),
 	)
 	liveChat := httpapi.NewLiveChatHandler(repo, livechat.NewHub())
+	endScreen := httpapi.NewEndScreenHandler(repo)
 
 	requireAuth := httpapi.RequireAuth(repo)
 	optionalAuth := httpapi.OptionalAuth(repo)
@@ -134,6 +135,8 @@ func main() {
 	mux.Handle("DELETE /videos/{id}/watch-later", requireAuth(http.HandlerFunc(video.RemoveWatchLater)))
 	mux.Handle("GET /videos/{id}/watch-later", requireAuth(http.HandlerFunc(video.GetWatchLaterStatus)))
 	mux.Handle("GET /me/watch-later", requireAuth(http.HandlerFunc(video.ListWatchLater)))
+	mux.Handle("PATCH /videos/{id}", requireAuth(http.HandlerFunc(video.UpdateVideo)))
+	mux.HandleFunc("GET /shorts", video.ListShorts)
 	mux.HandleFunc("GET /channels/{handle}/videos", video.ListVideosByChannel)
 	mux.HandleFunc("GET /videos/trending", video.ListTrendingVideos)
 	mux.HandleFunc("GET /search/suggestions", video.SuggestVideoTitles)
@@ -187,6 +190,10 @@ func main() {
 	mux.Handle("POST /videos/{id}/chapters", requireAuth(http.HandlerFunc(chapter.CreateChapter)))
 	mux.HandleFunc("GET /videos/{id}/chapters", chapter.ListChapters)
 	mux.Handle("DELETE /chapters/{id}", requireAuth(http.HandlerFunc(chapter.DeleteChapter)))
+
+	mux.Handle("POST /videos/{id}/end-screens", requireAuth(http.HandlerFunc(endScreen.CreateEndScreen)))
+	mux.HandleFunc("GET /videos/{id}/end-screens", endScreen.ListEndScreens)
+	mux.Handle("DELETE /end-screens/{id}", requireAuth(http.HandlerFunc(endScreen.DeleteEndScreen)))
 
 	mux.Handle("GET /channels/me/analytics", requireAuth(http.HandlerFunc(analytics.GetMyChannelAnalytics)))
 

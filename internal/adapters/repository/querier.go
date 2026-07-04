@@ -37,6 +37,7 @@ type Querier interface {
 	CreateCommentLike(ctx context.Context, arg CreateCommentLikeParams) error
 	CreateCommunityPost(ctx context.Context, arg CreateCommunityPostParams) (CommunityPost, error)
 	CreateCommunityPostLike(ctx context.Context, arg CreateCommunityPostLikeParams) error
+	CreateEndScreen(ctx context.Context, arg CreateEndScreenParams) (VideoEndScreen, error)
 	CreateNotification(ctx context.Context, arg CreateNotificationParams) (Notification, error)
 	CreatePlaylist(ctx context.Context, arg CreatePlaylistParams) (Playlist, error)
 	CreateReport(ctx context.Context, arg CreateReportParams) (Report, error)
@@ -53,6 +54,7 @@ type Querier interface {
 	DeleteCommentLike(ctx context.Context, arg DeleteCommentLikeParams) error
 	DeleteCommunityPost(ctx context.Context, id uuid.UUID) error
 	DeleteCommunityPostLike(ctx context.Context, arg DeleteCommunityPostLikeParams) error
+	DeleteEndScreen(ctx context.Context, id uuid.UUID) error
 	DeletePlaylist(ctx context.Context, id uuid.UUID) error
 	DeleteSession(ctx context.Context, tokenHash string) error
 	DeleteSubscription(ctx context.Context, arg DeleteSubscriptionParams) error
@@ -73,6 +75,7 @@ type Querier interface {
 	GetCommentLike(ctx context.Context, arg GetCommentLikeParams) (CommentLike, error)
 	GetCommunityPostByID(ctx context.Context, id uuid.UUID) (CommunityPost, error)
 	GetCommunityPostLike(ctx context.Context, arg GetCommunityPostLikeParams) (CommunityPostLike, error)
+	GetEndScreenByID(ctx context.Context, id uuid.UUID) (VideoEndScreen, error)
 	GetLiveStreamByChannelID(ctx context.Context, channelID pgtype.UUID) (LiveStream, error)
 	GetPlaylistByID(ctx context.Context, id uuid.UUID) (Playlist, error)
 	GetSessionWithUser(ctx context.Context, tokenHash string) (GetSessionWithUserRow, error)
@@ -101,6 +104,7 @@ type Querier interface {
 	// ListCommentReplies, not mixed flat into the same list.
 	ListCommentsByVideo(ctx context.Context, arg ListCommentsByVideoParams) ([]ListCommentsByVideoRow, error)
 	ListCommunityPostsByChannel(ctx context.Context, arg ListCommunityPostsByChannelParams) ([]CommunityPost, error)
+	ListEndScreensByVideo(ctx context.Context, videoID uuid.UUID) ([]VideoEndScreen, error)
 	ListLikedVideosByUser(ctx context.Context, arg ListLikedVideosByUserParams) ([]Video, error)
 	// Small table (one row per channel that's ever gone live) — a full scan
 	// every poll interval is cheap enough that indexing by status isn't needed.
@@ -117,6 +121,7 @@ type Querier interface {
 	// No ML/recommendation model — just same channel first, then same
 	// category, ranked by views. Good enough at this scale.
 	ListRelatedVideos(ctx context.Context, arg ListRelatedVideosParams) ([]Video, error)
+	ListShorts(ctx context.Context, arg ListShortsParams) ([]Video, error)
 	ListSubscriptionFeed(ctx context.Context, arg ListSubscriptionFeedParams) ([]Video, error)
 	// No view-event log exists (views_count is a running counter), so recency
 	// is approximated by upload window rather than true view-velocity — good
@@ -134,6 +139,7 @@ type Querier interface {
 	UpdateChannel(ctx context.Context, arg UpdateChannelParams) (Channel, error)
 	UpdateLiveStreamTitle(ctx context.Context, arg UpdateLiveStreamTitleParams) (LiveStream, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
+	UpdateVideo(ctx context.Context, arg UpdateVideoParams) (Video, error)
 	UpdateVideoInteractionType(ctx context.Context, arg UpdateVideoInteractionTypeParams) (VideoInteraction, error)
 	// Issuing a key is also how a channel "resets" their stream — regenerating
 	// forces status back to offline until the new key is actually used to publish.

@@ -391,3 +391,27 @@ func (r *PostgresRepository) ListChannelVideoStats(ctx context.Context, arg List
 func (r *PostgresRepository) CountNewSubscribersSince(ctx context.Context, arg CountNewSubscribersSinceParams) (int64, error) {
 	return r.queries.CountNewSubscribersSince(ctx, arg)
 }
+
+func (r *PostgresRepository) UpdateVideo(ctx context.Context, arg UpdateVideoParams) (Video, error) {
+	return r.queries.UpdateVideo(ctx, arg)
+}
+
+func (r *PostgresRepository) ListShorts(ctx context.Context, arg ListShortsParams) ([]Video, error) {
+	return r.queries.ListShorts(ctx, arg)
+}
+
+func (r *PostgresRepository) CreateEndScreen(ctx context.Context, arg CreateEndScreenParams) (VideoEndScreen, error) {
+	return r.queries.CreateEndScreen(ctx, arg)
+}
+
+func (r *PostgresRepository) ListEndScreensByVideo(ctx context.Context, videoID uuid.UUID) ([]VideoEndScreen, error) {
+	return r.queries.ListEndScreensByVideo(ctx, videoID)
+}
+
+func (r *PostgresRepository) GetEndScreenByID(ctx context.Context, id uuid.UUID) (VideoEndScreen, error) {
+	return r.queries.GetEndScreenByID(ctx, id)
+}
+
+func (r *PostgresRepository) DeleteEndScreen(ctx context.Context, id uuid.UUID) error {
+	return r.queries.DeleteEndScreen(ctx, id)
+}

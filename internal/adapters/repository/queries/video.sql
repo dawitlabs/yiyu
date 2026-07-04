@@ -27,6 +27,7 @@ SET status = 'ready',
     hls_playlist_url = $2,
     thumbnail_url = COALESCE(NULLIF(thumbnail_url, ''), $3),
     duration = $4,
+    is_short = $5,
     updated_at = NOW()
 WHERE id = $1
 RETURNING *;
@@ -104,6 +105,24 @@ WHERE visibility = 'public' AND status = 'ready'
   AND lower(title) LIKE lower($1) || '%'
 LIMIT 8;
 
+-- name: UpdateVideo :one
+UPDATE videos
+SET title = $2,
+    description = $3,
+    thumbnail_url = $4,
+    category = $5,
+    tags = $6,
+    visibility = $7,
+    updated_at = NOW()
+WHERE id = $1
+RETURNING *;
+
+-- name: ListShorts :many
+SELECT * FROM videos
+WHERE visibility = 'public' AND status = 'ready' AND is_short = true
+ORDER BY uploaded_at DESC
+LIMIT $1 OFFSET $2;
+
 -- name: AdminListVideos :many
 SELECT * FROM videos
 ORDER BY uploaded_at DESC
@@ -113,7 +132,7 @@ LIMIT $1 OFFSET $2;
 DELETE FROM videos WHERE id = $1;
 
 -- name: SearchVideos :many
-SELECT videos.id, videos.channel_id, videos.title, videos.description, videos.status, videos.visibility, videos.views_count, videos.likes_count, videos.dislikes_count, videos.thumbnail_url, videos.original_url, videos.hls_playlist_url, videos.category, videos.tags, videos.uploaded_at, videos.published_at, videos.created_at, videos.updated_at, videos.duration
+SELECT videos.*
 FROM videos
 JOIN video_search ON video_search.video_id = videos.id
 WHERE video_search.search_vector @@ websearch_to_tsquery('english', $1)

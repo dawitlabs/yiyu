@@ -45,7 +45,7 @@ func (q *Queries) IsInWatchLater(ctx context.Context, arg IsInWatchLaterParams) 
 }
 
 const listWatchLater = `-- name: ListWatchLater :many
-SELECT videos.id, videos.channel_id, videos.title, videos.description, videos.status, videos.visibility, videos.views_count, videos.likes_count, videos.dislikes_count, videos.thumbnail_url, videos.original_url, videos.hls_playlist_url, videos.category, videos.tags, videos.uploaded_at, videos.published_at, videos.created_at, videos.updated_at, videos.duration FROM watch_later
+SELECT videos.id, videos.channel_id, videos.title, videos.description, videos.status, videos.visibility, videos.views_count, videos.likes_count, videos.dislikes_count, videos.thumbnail_url, videos.original_url, videos.hls_playlist_url, videos.category, videos.tags, videos.uploaded_at, videos.published_at, videos.created_at, videos.updated_at, videos.duration, videos.is_short FROM watch_later
 JOIN videos ON videos.id = watch_later.video_id
 WHERE watch_later.user_id = $1
 ORDER BY watch_later.created_at DESC
@@ -87,6 +87,7 @@ func (q *Queries) ListWatchLater(ctx context.Context, arg ListWatchLaterParams) 
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Duration,
+			&i.IsShort,
 		); err != nil {
 			return nil, err
 		}

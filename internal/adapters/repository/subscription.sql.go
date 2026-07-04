@@ -99,7 +99,7 @@ func (q *Queries) GetSubscription(ctx context.Context, arg GetSubscriptionParams
 }
 
 const listSubscriptionFeed = `-- name: ListSubscriptionFeed :many
-SELECT videos.id, videos.channel_id, videos.title, videos.description, videos.status, videos.visibility, videos.views_count, videos.likes_count, videos.dislikes_count, videos.thumbnail_url, videos.original_url, videos.hls_playlist_url, videos.category, videos.tags, videos.uploaded_at, videos.published_at, videos.created_at, videos.updated_at, videos.duration
+SELECT videos.id, videos.channel_id, videos.title, videos.description, videos.status, videos.visibility, videos.views_count, videos.likes_count, videos.dislikes_count, videos.thumbnail_url, videos.original_url, videos.hls_playlist_url, videos.category, videos.tags, videos.uploaded_at, videos.published_at, videos.created_at, videos.updated_at, videos.duration, videos.is_short
 FROM videos
 JOIN subscriptions ON subscriptions.channel_id = videos.channel_id
 WHERE subscriptions.user_id = $1
@@ -144,6 +144,7 @@ func (q *Queries) ListSubscriptionFeed(ctx context.Context, arg ListSubscription
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Duration,
+			&i.IsShort,
 		); err != nil {
 			return nil, err
 		}

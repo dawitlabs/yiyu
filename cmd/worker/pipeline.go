@@ -93,6 +93,7 @@ func transcode(ctx context.Context, repo *repository.PostgresRepository, store *
 		HlsPlaylistUrl: pgtype.Text{String: playlistURL, Valid: true},
 		ThumbnailUrl:   pgtype.Text{String: thumbnailURL, Valid: thumbnailURL != ""},
 		Duration:       pgtype.Int4{Int32: int32(duration), Valid: true},
+		IsShort:        duration <= 60,
 	})
 	if err != nil {
 		return fmt.Errorf("complete video processing: %w", err)

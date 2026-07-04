@@ -662,3 +662,79 @@ func (h *VideoHandler) ReportVideo(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+type updateVideoRequest struct {
+	Title        string   `json:"title"`
+	Description  string   `json:"description"`
+	ThumbnailUrl string   `json:"thumbnail_url"`
+	Category     string   `json:"category"`
+	Tags         []string `json:"tags"`
+	Visibility   string   `json:"visibility"`
+}
+
+func (h *VideoHandler) UpdateVideo(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "invalid video id", http.StatusBadRequest)
+		return
+	}
+
+	video, err := h.repo.GetVideoByID(r.Context(), id)
+	if err != nil {
+		http.Error(w, "video not found", http.StatusNotFound)
+		return
+	}
+
+	user, _ := UserFromContext(r.Context())
+	channel, err := h.repo.GetChannelByID(r.Context(), uuid.UUID(video.ChannelID.Bytes))
+	if err != nil || !channel.UserID.Valid || channel.UserID.Bytes != user.ID {
+		http.Error(w, "forbidden", http.StatusForbidden)
+		return
+	}
+
+	var req updateVideoRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+	if req.Title == "" {
+		http.Error(w, "title is required", http.StatusBadRequest)
+		return
+	}
+
+	visibility := req.Visibility
+	if visibility == "" {
+		visibility = video.Visibility
+	}
+
+	updated, err := h.repo.UpdateVideo(r.Context(), repository.UpdateVideoParams{
+		ID:           id,
+		Title:        req.Title,
+		Description:  pgtype.Text{String: req.Description, Valid: req.Description != ""},
+		ThumbnailUrl: pgtype.Text{String: req.ThumbnailUrl, Valid: req.ThumbnailUrl != ""},
+		Category:     pgtype.Text{String: req.Category, Valid: req.Category != ""},
+		Tags:         req.Tags,
+		Visibility:   visibility,
+	})
+	if err != nil {
+		slog.Error("update video", "error", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, toVideoResponse(updated, channel))
+}
+
+func (h *VideoHandler) ListShorts(w http.ResponseWriter, r *http.Request) {
+	limit, offset := parseLimitOffset(r)
+	videos, err := h.repo.ListShorts(r.Context(), repository.ListShortsParams{
+		Limit:  limit,
+		Offset: offset,
+	})
+	if err != nil {
+		slog.Error("list shorts", "error", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	writeJSON(w, http.StatusOK, toVideoResponses(r.Context(), h.repo, videos))
+}

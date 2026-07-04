@@ -22,7 +22,7 @@ func (q *Queries) AdminDeleteVideo(ctx context.Context, id uuid.UUID) error {
 }
 
 const adminListVideos = `-- name: AdminListVideos :many
-SELECT id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration FROM videos
+SELECT id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration, is_short FROM videos
 ORDER BY uploaded_at DESC
 LIMIT $1 OFFSET $2
 `
@@ -61,6 +61,7 @@ func (q *Queries) AdminListVideos(ctx context.Context, arg AdminListVideosParams
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Duration,
+			&i.IsShort,
 		); err != nil {
 			return nil, err
 		}
@@ -82,7 +83,7 @@ WHERE id = (
     FOR UPDATE SKIP LOCKED
     LIMIT 1
 )
-RETURNING id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration
+RETURNING id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration, is_short
 `
 
 func (q *Queries) ClaimNextPendingVideo(ctx context.Context) (Video, error) {
@@ -108,6 +109,7 @@ func (q *Queries) ClaimNextPendingVideo(ctx context.Context) (Video, error) {
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Duration,
+		&i.IsShort,
 	)
 	return i, err
 }
@@ -118,9 +120,10 @@ SET status = 'ready',
     hls_playlist_url = $2,
     thumbnail_url = COALESCE(NULLIF(thumbnail_url, ''), $3),
     duration = $4,
+    is_short = $5,
     updated_at = NOW()
 WHERE id = $1
-RETURNING id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration
+RETURNING id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration, is_short
 `
 
 type CompleteVideoProcessingParams struct {
@@ -128,6 +131,7 @@ type CompleteVideoProcessingParams struct {
 	HlsPlaylistUrl pgtype.Text `db:"hls_playlist_url" json:"hls_playlist_url"`
 	ThumbnailUrl   pgtype.Text `db:"thumbnail_url" json:"thumbnail_url"`
 	Duration       pgtype.Int4 `db:"duration" json:"duration"`
+	IsShort        bool        `db:"is_short" json:"is_short"`
 }
 
 func (q *Queries) CompleteVideoProcessing(ctx context.Context, arg CompleteVideoProcessingParams) (Video, error) {
@@ -136,6 +140,7 @@ func (q *Queries) CompleteVideoProcessing(ctx context.Context, arg CompleteVideo
 		arg.HlsPlaylistUrl,
 		arg.ThumbnailUrl,
 		arg.Duration,
+		arg.IsShort,
 	)
 	var i Video
 	err := row.Scan(
@@ -158,6 +163,7 @@ func (q *Queries) CompleteVideoProcessing(ctx context.Context, arg CompleteVideo
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Duration,
+		&i.IsShort,
 	)
 	return i, err
 }
@@ -165,7 +171,7 @@ func (q *Queries) CompleteVideoProcessing(ctx context.Context, arg CompleteVideo
 const createVideo = `-- name: CreateVideo :one
 INSERT INTO videos (channel_id, title, description, duration, status, visibility, category, tags, original_url, thumbnail_url)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-RETURNING id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration
+RETURNING id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration, is_short
 `
 
 type CreateVideoParams struct {
@@ -215,6 +221,7 @@ func (q *Queries) CreateVideo(ctx context.Context, arg CreateVideoParams) (Video
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Duration,
+		&i.IsShort,
 	)
 	return i, err
 }
@@ -229,7 +236,7 @@ func (q *Queries) FailVideoProcessing(ctx context.Context, id uuid.UUID) error {
 }
 
 const getVideoByID = `-- name: GetVideoByID :one
-SELECT id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration FROM videos WHERE id = $1
+SELECT id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration, is_short FROM videos WHERE id = $1
 `
 
 func (q *Queries) GetVideoByID(ctx context.Context, id uuid.UUID) (Video, error) {
@@ -255,12 +262,13 @@ func (q *Queries) GetVideoByID(ctx context.Context, id uuid.UUID) (Video, error)
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Duration,
+		&i.IsShort,
 	)
 	return i, err
 }
 
 const incrementVideoDislikes = `-- name: IncrementVideoDislikes :one
-UPDATE videos SET dislikes_count = dislikes_count + 1 WHERE id = $1 RETURNING id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration
+UPDATE videos SET dislikes_count = dislikes_count + 1 WHERE id = $1 RETURNING id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration, is_short
 `
 
 func (q *Queries) IncrementVideoDislikes(ctx context.Context, id uuid.UUID) (Video, error) {
@@ -286,12 +294,13 @@ func (q *Queries) IncrementVideoDislikes(ctx context.Context, id uuid.UUID) (Vid
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Duration,
+		&i.IsShort,
 	)
 	return i, err
 }
 
 const incrementVideoLikes = `-- name: IncrementVideoLikes :one
-UPDATE videos SET likes_count = likes_count + 1 WHERE id = $1 RETURNING id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration
+UPDATE videos SET likes_count = likes_count + 1 WHERE id = $1 RETURNING id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration, is_short
 `
 
 func (q *Queries) IncrementVideoLikes(ctx context.Context, id uuid.UUID) (Video, error) {
@@ -317,12 +326,13 @@ func (q *Queries) IncrementVideoLikes(ctx context.Context, id uuid.UUID) (Video,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Duration,
+		&i.IsShort,
 	)
 	return i, err
 }
 
 const incrementVideoViews = `-- name: IncrementVideoViews :one
-UPDATE videos SET views_count = views_count + 1 WHERE id = $1 RETURNING id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration
+UPDATE videos SET views_count = views_count + 1 WHERE id = $1 RETURNING id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration, is_short
 `
 
 func (q *Queries) IncrementVideoViews(ctx context.Context, id uuid.UUID) (Video, error) {
@@ -348,12 +358,13 @@ func (q *Queries) IncrementVideoViews(ctx context.Context, id uuid.UUID) (Video,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.Duration,
+		&i.IsShort,
 	)
 	return i, err
 }
 
 const listLikedVideosByUser = `-- name: ListLikedVideosByUser :many
-SELECT videos.id, videos.channel_id, videos.title, videos.description, videos.status, videos.visibility, videos.views_count, videos.likes_count, videos.dislikes_count, videos.thumbnail_url, videos.original_url, videos.hls_playlist_url, videos.category, videos.tags, videos.uploaded_at, videos.published_at, videos.created_at, videos.updated_at, videos.duration FROM video_interactions
+SELECT videos.id, videos.channel_id, videos.title, videos.description, videos.status, videos.visibility, videos.views_count, videos.likes_count, videos.dislikes_count, videos.thumbnail_url, videos.original_url, videos.hls_playlist_url, videos.category, videos.tags, videos.uploaded_at, videos.published_at, videos.created_at, videos.updated_at, videos.duration, videos.is_short FROM video_interactions
 JOIN videos ON videos.id = video_interactions.video_id
 WHERE video_interactions.user_id = $1 AND video_interactions.type = 'like'
 ORDER BY video_interactions.created_at DESC
@@ -395,6 +406,7 @@ func (q *Queries) ListLikedVideosByUser(ctx context.Context, arg ListLikedVideos
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Duration,
+			&i.IsShort,
 		); err != nil {
 			return nil, err
 		}
@@ -414,7 +426,7 @@ WITH watched_categories AS (
     WHERE wh.user_id = $1 AND v.category != ''
     GROUP BY v.category
 )
-SELECT v.id, v.channel_id, v.title, v.description, v.status, v.visibility, v.views_count, v.likes_count, v.dislikes_count, v.thumbnail_url, v.original_url, v.hls_playlist_url, v.category, v.tags, v.uploaded_at, v.published_at, v.created_at, v.updated_at, v.duration FROM videos v
+SELECT v.id, v.channel_id, v.title, v.description, v.status, v.visibility, v.views_count, v.likes_count, v.dislikes_count, v.thumbnail_url, v.original_url, v.hls_playlist_url, v.category, v.tags, v.uploaded_at, v.published_at, v.created_at, v.updated_at, v.duration, v.is_short FROM videos v
 LEFT JOIN watched_categories wc ON wc.category = v.category
 WHERE v.visibility = 'public' AND v.status = 'ready'
 ORDER BY
@@ -463,6 +475,7 @@ func (q *Queries) ListPersonalizedFeed(ctx context.Context, arg ListPersonalized
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Duration,
+			&i.IsShort,
 		); err != nil {
 			return nil, err
 		}
@@ -475,7 +488,7 @@ func (q *Queries) ListPersonalizedFeed(ctx context.Context, arg ListPersonalized
 }
 
 const listPublicVideos = `-- name: ListPublicVideos :many
-SELECT id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration FROM videos
+SELECT id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration, is_short FROM videos
 WHERE visibility = 'public' AND status = 'ready'
 ORDER BY uploaded_at DESC
 LIMIT $1 OFFSET $2
@@ -515,6 +528,7 @@ func (q *Queries) ListPublicVideos(ctx context.Context, arg ListPublicVideosPara
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Duration,
+			&i.IsShort,
 		); err != nil {
 			return nil, err
 		}
@@ -527,7 +541,7 @@ func (q *Queries) ListPublicVideos(ctx context.Context, arg ListPublicVideosPara
 }
 
 const listRelatedVideos = `-- name: ListRelatedVideos :many
-SELECT id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration FROM videos
+SELECT id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration, is_short FROM videos
 WHERE id != $1
   AND visibility = 'public'
   AND status = 'ready'
@@ -579,6 +593,60 @@ func (q *Queries) ListRelatedVideos(ctx context.Context, arg ListRelatedVideosPa
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Duration,
+			&i.IsShort,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listShorts = `-- name: ListShorts :many
+SELECT id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration, is_short FROM videos
+WHERE visibility = 'public' AND status = 'ready' AND is_short = true
+ORDER BY uploaded_at DESC
+LIMIT $1 OFFSET $2
+`
+
+type ListShortsParams struct {
+	Limit  int32 `db:"limit" json:"limit"`
+	Offset int32 `db:"offset" json:"offset"`
+}
+
+func (q *Queries) ListShorts(ctx context.Context, arg ListShortsParams) ([]Video, error) {
+	rows, err := q.db.Query(ctx, listShorts, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Video
+	for rows.Next() {
+		var i Video
+		if err := rows.Scan(
+			&i.ID,
+			&i.ChannelID,
+			&i.Title,
+			&i.Description,
+			&i.Status,
+			&i.Visibility,
+			&i.ViewsCount,
+			&i.LikesCount,
+			&i.DislikesCount,
+			&i.ThumbnailUrl,
+			&i.OriginalUrl,
+			&i.HlsPlaylistUrl,
+			&i.Category,
+			&i.Tags,
+			&i.UploadedAt,
+			&i.PublishedAt,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.Duration,
+			&i.IsShort,
 		); err != nil {
 			return nil, err
 		}
@@ -591,7 +659,7 @@ func (q *Queries) ListRelatedVideos(ctx context.Context, arg ListRelatedVideosPa
 }
 
 const listTrendingVideos = `-- name: ListTrendingVideos :many
-SELECT id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration FROM videos
+SELECT id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration, is_short FROM videos
 WHERE visibility = 'public' AND status = 'ready'
   AND uploaded_at > NOW() - INTERVAL '7 days'
 ORDER BY views_count DESC
@@ -630,6 +698,7 @@ func (q *Queries) ListTrendingVideos(ctx context.Context, limit int32) ([]Video,
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Duration,
+			&i.IsShort,
 		); err != nil {
 			return nil, err
 		}
@@ -642,7 +711,7 @@ func (q *Queries) ListTrendingVideos(ctx context.Context, limit int32) ([]Video,
 }
 
 const listVideosByChannel = `-- name: ListVideosByChannel :many
-SELECT id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration FROM videos WHERE channel_id = $1 ORDER BY uploaded_at DESC LIMIT $2 OFFSET $3
+SELECT id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration, is_short FROM videos WHERE channel_id = $1 ORDER BY uploaded_at DESC LIMIT $2 OFFSET $3
 `
 
 type ListVideosByChannelParams struct {
@@ -680,6 +749,7 @@ func (q *Queries) ListVideosByChannel(ctx context.Context, arg ListVideosByChann
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Duration,
+			&i.IsShort,
 		); err != nil {
 			return nil, err
 		}
@@ -692,7 +762,7 @@ func (q *Queries) ListVideosByChannel(ctx context.Context, arg ListVideosByChann
 }
 
 const searchVideos = `-- name: SearchVideos :many
-SELECT videos.id, videos.channel_id, videos.title, videos.description, videos.status, videos.visibility, videos.views_count, videos.likes_count, videos.dislikes_count, videos.thumbnail_url, videos.original_url, videos.hls_playlist_url, videos.category, videos.tags, videos.uploaded_at, videos.published_at, videos.created_at, videos.updated_at, videos.duration
+SELECT videos.id, videos.channel_id, videos.title, videos.description, videos.status, videos.visibility, videos.views_count, videos.likes_count, videos.dislikes_count, videos.thumbnail_url, videos.original_url, videos.hls_playlist_url, videos.category, videos.tags, videos.uploaded_at, videos.published_at, videos.created_at, videos.updated_at, videos.duration, videos.is_short
 FROM videos
 JOIN video_search ON video_search.video_id = videos.id
 WHERE video_search.search_vector @@ websearch_to_tsquery('english', $1)
@@ -736,6 +806,7 @@ func (q *Queries) SearchVideos(ctx context.Context, arg SearchVideosParams) ([]V
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.Duration,
+			&i.IsShort,
 		); err != nil {
 			return nil, err
 		}
@@ -772,4 +843,63 @@ func (q *Queries) SuggestVideoTitles(ctx context.Context, lower string) ([]strin
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateVideo = `-- name: UpdateVideo :one
+UPDATE videos
+SET title = $2,
+    description = $3,
+    thumbnail_url = $4,
+    category = $5,
+    tags = $6,
+    visibility = $7,
+    updated_at = NOW()
+WHERE id = $1
+RETURNING id, channel_id, title, description, status, visibility, views_count, likes_count, dislikes_count, thumbnail_url, original_url, hls_playlist_url, category, tags, uploaded_at, published_at, created_at, updated_at, duration, is_short
+`
+
+type UpdateVideoParams struct {
+	ID           uuid.UUID   `db:"id" json:"id"`
+	Title        string      `db:"title" json:"title"`
+	Description  pgtype.Text `db:"description" json:"description"`
+	ThumbnailUrl pgtype.Text `db:"thumbnail_url" json:"thumbnail_url"`
+	Category     pgtype.Text `db:"category" json:"category"`
+	Tags         []string    `db:"tags" json:"tags"`
+	Visibility   string      `db:"visibility" json:"visibility"`
+}
+
+func (q *Queries) UpdateVideo(ctx context.Context, arg UpdateVideoParams) (Video, error) {
+	row := q.db.QueryRow(ctx, updateVideo,
+		arg.ID,
+		arg.Title,
+		arg.Description,
+		arg.ThumbnailUrl,
+		arg.Category,
+		arg.Tags,
+		arg.Visibility,
+	)
+	var i Video
+	err := row.Scan(
+		&i.ID,
+		&i.ChannelID,
+		&i.Title,
+		&i.Description,
+		&i.Status,
+		&i.Visibility,
+		&i.ViewsCount,
+		&i.LikesCount,
+		&i.DislikesCount,
+		&i.ThumbnailUrl,
+		&i.OriginalUrl,
+		&i.HlsPlaylistUrl,
+		&i.Category,
+		&i.Tags,
+		&i.UploadedAt,
+		&i.PublishedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.Duration,
+		&i.IsShort,
+	)
+	return i, err
 }

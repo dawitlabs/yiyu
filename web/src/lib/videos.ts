@@ -16,5 +16,17 @@ export type Video = {
   category: string;
   tags: string[] | null;
   duration: number;
+  is_short: boolean;
   uploaded_at: string;
+};
+
+export type EndScreen = {
+  id: string;
+  video_id: string;
+  type: "video" | "playlist" | "channel" | "subscribe";
+  target_id: string;
+  start_seconds: number;
+  position_x: number;
+  position_y: number;
+  created_at: string;
 };

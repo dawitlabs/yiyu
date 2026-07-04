@@ -201,6 +201,7 @@ type Video struct {
 	CreatedAt      pgtype.Timestamptz `db:"created_at" json:"created_at"`
 	UpdatedAt      pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
 	Duration       pgtype.Int4        `db:"duration" json:"duration"`
+	IsShort        bool               `db:"is_short" json:"is_short"`
 }
 
 type VideoCaption struct {
@@ -218,6 +219,17 @@ type VideoChapter struct {
 	VideoID      pgtype.UUID        `db:"video_id" json:"video_id"`
 	Title        string             `db:"title" json:"title"`
 	StartSeconds int32              `db:"start_seconds" json:"start_seconds"`
+	CreatedAt    pgtype.Timestamptz `db:"created_at" json:"created_at"`
+}
+
+type VideoEndScreen struct {
+	ID           uuid.UUID          `db:"id" json:"id"`
+	VideoID      uuid.UUID          `db:"video_id" json:"video_id"`
+	Type         string             `db:"type" json:"type"`
+	TargetID     uuid.UUID          `db:"target_id" json:"target_id"`
+	StartSeconds int32              `db:"start_seconds" json:"start_seconds"`
+	PositionX    float32            `db:"position_x" json:"position_x"`
+	PositionY    float32            `db:"position_y" json:"position_y"`
 	CreatedAt    pgtype.Timestamptz `db:"created_at" json:"created_at"`
 }
 
