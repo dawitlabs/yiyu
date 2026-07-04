@@ -22,6 +22,7 @@ type Repository interface {
 	CaptionRepository
 	ChapterRepository
 	AnalyticsRepository
+	CommunityPostRepository
 
 	// WithTx runs fn inside a single transaction, giving it access to every
 	// query method (repository.Querier is the full sqlc-generated set) —
@@ -109,6 +110,14 @@ type PlaylistRepository interface {
 	RemoveVideoFromPlaylist(ctx context.Context, arg repository.RemoveVideoFromPlaylistParams) error
 	ListPlaylistVideos(ctx context.Context, id uuid.UUID) ([]repository.Video, error)
 	ListAllPlaylistsByChannel(ctx context.Context, arg repository.ListAllPlaylistsByChannelParams) ([]repository.Playlist, error)
+}
+
+type CommunityPostRepository interface {
+	CreateCommunityPost(ctx context.Context, arg repository.CreateCommunityPostParams) (repository.CommunityPost, error)
+	GetCommunityPostByID(ctx context.Context, id uuid.UUID) (repository.CommunityPost, error)
+	ListCommunityPostsByChannel(ctx context.Context, arg repository.ListCommunityPostsByChannelParams) ([]repository.CommunityPost, error)
+	DeleteCommunityPost(ctx context.Context, id uuid.UUID) error
+	GetCommunityPostLike(ctx context.Context, arg repository.GetCommunityPostLikeParams) (repository.CommunityPostLike, error)
 }
 
 type NotificationRepository interface {

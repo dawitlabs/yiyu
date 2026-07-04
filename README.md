@@ -113,6 +113,15 @@ sqlc generate
 | `GET` | `/videos/{id}/comments` | — | List comments |
 | `DELETE` | `/comments/{id}` | session, author or admin | Soft-delete a comment |
 
+### Community posts
+
+| Method | Path | Auth | Description |
+|---|---|---|---|
+| `POST` | `/channels/{id}/posts` | session, owner-only | Post a text (+ optional image) update to a channel |
+| `GET` | `/channels/{handle}/posts` | — | List a channel's posts |
+| `DELETE` | `/posts/{id}` | session, owner or admin | Delete a post |
+| `POST` | `/posts/{id}/like` | session | Toggle the caller's like |
+
 ### Admin
 
 | Method | Path | Auth | Description |

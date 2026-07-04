@@ -34,6 +34,8 @@ type Querier interface {
 	CreateChapter(ctx context.Context, arg CreateChapterParams) (VideoChapter, error)
 	CreateComment(ctx context.Context, arg CreateCommentParams) (Comment, error)
 	CreateCommentLike(ctx context.Context, arg CreateCommentLikeParams) error
+	CreateCommunityPost(ctx context.Context, arg CreateCommunityPostParams) (CommunityPost, error)
+	CreateCommunityPostLike(ctx context.Context, arg CreateCommunityPostLikeParams) error
 	CreateNotification(ctx context.Context, arg CreateNotificationParams) (Notification, error)
 	CreatePlaylist(ctx context.Context, arg CreatePlaylistParams) (Playlist, error)
 	CreateReport(ctx context.Context, arg CreateReportParams) (Report, error)
@@ -43,10 +45,13 @@ type Querier interface {
 	CreateVideo(ctx context.Context, arg CreateVideoParams) (Video, error)
 	CreateVideoInteraction(ctx context.Context, arg CreateVideoInteractionParams) (VideoInteraction, error)
 	DecrementCommentLikes(ctx context.Context, id uuid.UUID) (Comment, error)
+	DecrementCommunityPostLikes(ctx context.Context, id uuid.UUID) (CommunityPost, error)
 	DeleteCaption(ctx context.Context, id uuid.UUID) error
 	DeleteChapter(ctx context.Context, id uuid.UUID) error
 	DeleteComment(ctx context.Context, id uuid.UUID) error
 	DeleteCommentLike(ctx context.Context, arg DeleteCommentLikeParams) error
+	DeleteCommunityPost(ctx context.Context, id uuid.UUID) error
+	DeleteCommunityPostLike(ctx context.Context, arg DeleteCommunityPostLikeParams) error
 	DeletePlaylist(ctx context.Context, id uuid.UUID) error
 	DeleteSession(ctx context.Context, tokenHash string) error
 	DeleteSubscription(ctx context.Context, arg DeleteSubscriptionParams) error
@@ -62,6 +67,8 @@ type Querier interface {
 	GetChapterByID(ctx context.Context, id uuid.UUID) (VideoChapter, error)
 	GetCommentByID(ctx context.Context, id uuid.UUID) (Comment, error)
 	GetCommentLike(ctx context.Context, arg GetCommentLikeParams) (CommentLike, error)
+	GetCommunityPostByID(ctx context.Context, id uuid.UUID) (CommunityPost, error)
+	GetCommunityPostLike(ctx context.Context, arg GetCommunityPostLikeParams) (CommunityPostLike, error)
 	GetPlaylistByID(ctx context.Context, id uuid.UUID) (Playlist, error)
 	GetSessionWithUser(ctx context.Context, tokenHash string) (GetSessionWithUserRow, error)
 	GetSubscription(ctx context.Context, arg GetSubscriptionParams) (Subscription, error)
@@ -72,6 +79,7 @@ type Querier interface {
 	GetVideoByID(ctx context.Context, id uuid.UUID) (Video, error)
 	GetVideoInteraction(ctx context.Context, arg GetVideoInteractionParams) (VideoInteraction, error)
 	IncrementCommentLikes(ctx context.Context, id uuid.UUID) (Comment, error)
+	IncrementCommunityPostLikes(ctx context.Context, id uuid.UUID) (CommunityPost, error)
 	IncrementVideoDislikes(ctx context.Context, id uuid.UUID) (Video, error)
 	IncrementVideoLikes(ctx context.Context, id uuid.UUID) (Video, error)
 	IncrementVideoViews(ctx context.Context, id uuid.UUID) (Video, error)
@@ -85,6 +93,7 @@ type Querier interface {
 	// Top-level only (parent_id IS NULL) — replies are fetched separately via
 	// ListCommentReplies, not mixed flat into the same list.
 	ListCommentsByVideo(ctx context.Context, arg ListCommentsByVideoParams) ([]ListCommentsByVideoRow, error)
+	ListCommunityPostsByChannel(ctx context.Context, arg ListCommunityPostsByChannelParams) ([]CommunityPost, error)
 	ListNotifications(ctx context.Context, arg ListNotificationsParams) ([]ListNotificationsRow, error)
 	// Same recency-ranked pool as ListPublicVideos, boosted by two signals
 	// already in the schema: subscribed channels and categories the user

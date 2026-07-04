@@ -68,6 +68,7 @@ func main() {
 	subscription := httpapi.NewSubscriptionHandler(repo)
 	watchHistory := httpapi.NewWatchHistoryHandler(repo)
 	playlist := httpapi.NewPlaylistHandler(repo)
+	communityPost := httpapi.NewCommunityPostHandler(repo)
 	notification := httpapi.NewNotificationHandler(repo)
 	caption := httpapi.NewCaptionHandler(repo)
 	chapter := httpapi.NewChapterHandler(repo)
@@ -146,6 +147,11 @@ func main() {
 	mux.Handle("DELETE /playlists/{id}", requireAuth(http.HandlerFunc(playlist.DeletePlaylist)))
 	mux.Handle("POST /playlists/{id}/videos", requireAuth(http.HandlerFunc(playlist.AddVideo)))
 	mux.Handle("DELETE /playlists/{id}/videos/{videoId}", requireAuth(http.HandlerFunc(playlist.RemoveVideo)))
+
+	mux.Handle("POST /channels/{id}/posts", requireAuth(http.HandlerFunc(communityPost.CreatePost)))
+	mux.HandleFunc("GET /channels/{handle}/posts", communityPost.ListPostsByChannel)
+	mux.Handle("DELETE /posts/{id}", requireAuth(http.HandlerFunc(communityPost.DeletePost)))
+	mux.Handle("POST /posts/{id}/like", requireAuth(http.HandlerFunc(communityPost.LikePost)))
 
 	mux.Handle("GET /notifications", requireAuth(http.HandlerFunc(notification.ListNotifications)))
 	mux.Handle("GET /notifications/unread-count", requireAuth(http.HandlerFunc(notification.UnreadCount)))

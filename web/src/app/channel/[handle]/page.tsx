@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { CommunityPostSection } from "@/components/community-post-section";
 import { SubscribeButton } from "@/components/subscribe-button";
 import { VideoGrid } from "@/components/video-grid";
 import { serverFetch } from "@/lib/api";
 import { getCurrentUser } from "@/lib/auth";
 import type { Channel } from "@/lib/channels";
+import type { CommunityPost } from "@/lib/community-posts";
 import { getMyChannel } from "@/lib/my-channel";
 import type { Playlist } from "@/lib/playlists";
 import type { Video } from "@/lib/videos";
@@ -16,11 +18,12 @@ export default async function ChannelPage({
 }) {
   const { handle } = await params;
 
-  const [channelRes, videosRes, playlistsRes, myChannel, user] =
+  const [channelRes, videosRes, playlistsRes, postsRes, myChannel, user] =
     await Promise.all([
       serverFetch(`/channels/${handle}`),
       serverFetch(`/channels/${handle}/videos`),
       serverFetch(`/channels/${handle}/playlists`),
+      serverFetch(`/channels/${handle}/posts`),
       getMyChannel(),
       getCurrentUser(),
     ]);
@@ -34,6 +37,7 @@ export default async function ChannelPage({
   const playlists: Playlist[] = playlistsRes.ok
     ? await playlistsRes.json()
     : [];
+  const posts: CommunityPost[] = postsRes.ok ? await postsRes.json() : [];
   const isOwner = myChannel?.handle === channel.handle;
 
   let isSubscribed = false;
@@ -120,6 +124,13 @@ export default async function ChannelPage({
           </div>
         )}
       </div>
+
+      <CommunityPostSection
+        channelId={channel.id}
+        initialPosts={posts}
+        isOwner={isOwner}
+        currentUserId={user?.id ?? null}
+      />
     </div>
   );
 }

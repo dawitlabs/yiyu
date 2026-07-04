@@ -228,6 +228,26 @@ func (r *PostgresRepository) CreatePlaylist(ctx context.Context, arg CreatePlayl
 	return r.queries.CreatePlaylist(ctx, arg)
 }
 
+func (r *PostgresRepository) CreateCommunityPost(ctx context.Context, arg CreateCommunityPostParams) (CommunityPost, error) {
+	return r.queries.CreateCommunityPost(ctx, arg)
+}
+
+func (r *PostgresRepository) GetCommunityPostByID(ctx context.Context, id uuid.UUID) (CommunityPost, error) {
+	return r.queries.GetCommunityPostByID(ctx, id)
+}
+
+func (r *PostgresRepository) ListCommunityPostsByChannel(ctx context.Context, arg ListCommunityPostsByChannelParams) ([]CommunityPost, error) {
+	return r.queries.ListCommunityPostsByChannel(ctx, arg)
+}
+
+func (r *PostgresRepository) DeleteCommunityPost(ctx context.Context, id uuid.UUID) error {
+	return r.queries.DeleteCommunityPost(ctx, id)
+}
+
+func (r *PostgresRepository) GetCommunityPostLike(ctx context.Context, arg GetCommunityPostLikeParams) (CommunityPostLike, error) {
+	return r.queries.GetCommunityPostLike(ctx, arg)
+}
+
 func (r *PostgresRepository) GetPlaylistByID(ctx context.Context, id uuid.UUID) (Playlist, error) {
 	return r.queries.GetPlaylistByID(ctx, id)
 }

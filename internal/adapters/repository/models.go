@@ -86,6 +86,22 @@ type CommentLike struct {
 	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
 }
 
+type CommunityPost struct {
+	ID         uuid.UUID          `db:"id" json:"id"`
+	ChannelID  pgtype.UUID        `db:"channel_id" json:"channel_id"`
+	Content    string             `db:"content" json:"content"`
+	ImageUrl   pgtype.Text        `db:"image_url" json:"image_url"`
+	LikesCount pgtype.Int8        `db:"likes_count" json:"likes_count"`
+	CreatedAt  pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt  pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+}
+
+type CommunityPostLike struct {
+	PostID    uuid.UUID          `db:"post_id" json:"post_id"`
+	UserID    uuid.UUID          `db:"user_id" json:"user_id"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+}
+
 type Notification struct {
 	ID        uuid.UUID          `db:"id" json:"id"`
 	UserID    pgtype.UUID        `db:"user_id" json:"user_id"`
