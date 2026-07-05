@@ -22,6 +22,32 @@ export function MenuIcon({ className = DEFAULT_CLASS }: IconProps) {
   );
 }
 
+export function PlayIcon({ className = DEFAULT_CLASS }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className}>
+      <title>Play</title>
+      <path d="M7 4.5v15a.6.6 0 0 0 .9.52l13-7.5a.6.6 0 0 0 0-1.04l-13-7.5A.6.6 0 0 0 7 4.5Z" />
+    </svg>
+  );
+}
+
+export function InfoIcon({ className = DEFAULT_CLASS }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      className={className}
+    >
+      <title>More info</title>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 11v5M12 8h.01" />
+    </svg>
+  );
+}
+
 export function HomeIcon({ className = DEFAULT_CLASS }: IconProps) {
   return (
     <svg

@@ -4,6 +4,14 @@ export function formatTimestamp(seconds: number): string {
   return `${mins}:${secs.toString().padStart(2, "0")}`;
 }
 
+const compactNumberFormatter = new Intl.NumberFormat("en", {
+  notation: "compact",
+});
+
+export function formatViews(count: number): string {
+  return `${compactNumberFormatter.format(count)} ${count === 1 ? "view" : "views"}`;
+}
+
 const RELATIVE_TIME_UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
   ["year", 60 * 60 * 24 * 365],
   ["month", 60 * 60 * 24 * 30],
