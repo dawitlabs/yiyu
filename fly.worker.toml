@@ -1,0 +1,13 @@
+app = 'yiyu-worker'
+primary_region = 'cdg'
+
+[build]
+
+[processes]
+  worker = 'worker'
+
+[env]
+
+[[vm]]
+  size = 'shared-cpu-2x'
+  memory = '512mb'

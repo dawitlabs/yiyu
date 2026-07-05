@@ -18,3 +18,9 @@ LIMIT $1 OFFSET $2;
 
 -- name: AdminUpdateReportStatus :one
 UPDATE reports SET status = $2 WHERE id = $1 RETURNING *;
+
+-- name: AdminResolveReport :one
+UPDATE reports
+SET status = $2, action_taken = $3, resolved_by = $4
+WHERE id = $1
+RETURNING *;

@@ -75,8 +75,44 @@ func (q *Queries) AdminListReports(ctx context.Context, arg AdminListReportsPara
 	return items, nil
 }
 
+const adminResolveReport = `-- name: AdminResolveReport :one
+UPDATE reports
+SET status = $2, action_taken = $3, resolved_by = $4
+WHERE id = $1
+RETURNING id, reporter_id, video_id, comment_id, reason, status, created_at, action_taken, resolved_by
+`
+
+type AdminResolveReportParams struct {
+	ID          uuid.UUID   `db:"id" json:"id"`
+	Status      pgtype.Text `db:"status" json:"status"`
+	ActionTaken pgtype.Text `db:"action_taken" json:"action_taken"`
+	ResolvedBy  pgtype.UUID `db:"resolved_by" json:"resolved_by"`
+}
+
+func (q *Queries) AdminResolveReport(ctx context.Context, arg AdminResolveReportParams) (Report, error) {
+	row := q.db.QueryRow(ctx, adminResolveReport,
+		arg.ID,
+		arg.Status,
+		arg.ActionTaken,
+		arg.ResolvedBy,
+	)
+	var i Report
+	err := row.Scan(
+		&i.ID,
+		&i.ReporterID,
+		&i.VideoID,
+		&i.CommentID,
+		&i.Reason,
+		&i.Status,
+		&i.CreatedAt,
+		&i.ActionTaken,
+		&i.ResolvedBy,
+	)
+	return i, err
+}
+
 const adminUpdateReportStatus = `-- name: AdminUpdateReportStatus :one
-UPDATE reports SET status = $2 WHERE id = $1 RETURNING id, reporter_id, video_id, comment_id, reason, status, created_at
+UPDATE reports SET status = $2 WHERE id = $1 RETURNING id, reporter_id, video_id, comment_id, reason, status, created_at, action_taken, resolved_by
 `
 
 type AdminUpdateReportStatusParams struct {
@@ -95,6 +131,8 @@ func (q *Queries) AdminUpdateReportStatus(ctx context.Context, arg AdminUpdateRe
 		&i.Reason,
 		&i.Status,
 		&i.CreatedAt,
+		&i.ActionTaken,
+		&i.ResolvedBy,
 	)
 	return i, err
 }
@@ -102,7 +140,7 @@ func (q *Queries) AdminUpdateReportStatus(ctx context.Context, arg AdminUpdateRe
 const createReport = `-- name: CreateReport :one
 INSERT INTO reports (reporter_id, video_id, comment_id, reason)
 VALUES ($1, $2, $3, $4)
-RETURNING id, reporter_id, video_id, comment_id, reason, status, created_at
+RETURNING id, reporter_id, video_id, comment_id, reason, status, created_at, action_taken, resolved_by
 `
 
 type CreateReportParams struct {
@@ -128,6 +166,8 @@ func (q *Queries) CreateReport(ctx context.Context, arg CreateReportParams) (Rep
 		&i.Reason,
 		&i.Status,
 		&i.CreatedAt,
+		&i.ActionTaken,
+		&i.ResolvedBy,
 	)
 	return i, err
 }

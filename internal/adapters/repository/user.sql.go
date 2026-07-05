@@ -34,7 +34,7 @@ func (q *Queries) AdminDeleteUser(ctx context.Context, arg AdminDeleteUserParams
 }
 
 const adminGetAllUsers = `-- name: AdminGetAllUsers :many
-SELECT id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by FROM users 
+SELECT id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by, email_verified_at FROM users 
 WHERE deleted_at IS NULL 
 ORDER BY created_at DESC 
 LIMIT $1 OFFSET $2
@@ -68,6 +68,7 @@ func (q *Queries) AdminGetAllUsers(ctx context.Context, arg AdminGetAllUsersPara
 			&i.UpdatedAt,
 			&i.DeletedAt,
 			&i.DeletedBy,
+			&i.EmailVerifiedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -80,7 +81,7 @@ func (q *Queries) AdminGetAllUsers(ctx context.Context, arg AdminGetAllUsersPara
 }
 
 const adminGetUserWithDeleted = `-- name: AdminGetUserWithDeleted :one
-SELECT id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by FROM users WHERE id = $1
+SELECT id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by, email_verified_at FROM users WHERE id = $1
 `
 
 func (q *Queries) AdminGetUserWithDeleted(ctx context.Context, id uuid.UUID) (User, error) {
@@ -100,6 +101,7 @@ func (q *Queries) AdminGetUserWithDeleted(ctx context.Context, id uuid.UUID) (Us
 		&i.UpdatedAt,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.EmailVerifiedAt,
 	)
 	return i, err
 }
@@ -109,7 +111,7 @@ UPDATE users
 SET role = $2, 
     updated_at = NOW()
 WHERE id = $1 
-RETURNING id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by
+RETURNING id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by, email_verified_at
 `
 
 type AdminUpdateUserRoleParams struct {
@@ -135,6 +137,7 @@ func (q *Queries) AdminUpdateUserRole(ctx context.Context, arg AdminUpdateUserRo
 		&i.UpdatedAt,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.EmailVerifiedAt,
 	)
 	return i, err
 }
@@ -142,7 +145,7 @@ func (q *Queries) AdminUpdateUserRole(ctx context.Context, arg AdminUpdateUserRo
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (username, email, password_hash, role, display_name, bio, avatar_url)
 VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by
+RETURNING id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by, email_verified_at
 `
 
 type CreateUserParams struct {
@@ -180,6 +183,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.UpdatedAt,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.EmailVerifiedAt,
 	)
 	return i, err
 }
@@ -191,7 +195,7 @@ SET is_active = false,
     deleted_by = $2,
     updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by
+RETURNING id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by, email_verified_at
 `
 
 type DeleteUserParams struct {
@@ -216,12 +220,13 @@ func (q *Queries) DeleteUser(ctx context.Context, arg DeleteUserParams) (User, e
 		&i.UpdatedAt,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.EmailVerifiedAt,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by FROM users 
+SELECT id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by, email_verified_at FROM users 
 WHERE email = $1 AND is_active = true AND deleted_at IS NULL
 `
 
@@ -242,12 +247,13 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.UpdatedAt,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.EmailVerifiedAt,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by FROM users 
+SELECT id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by, email_verified_at FROM users 
 WHERE id = $1 AND is_active = true AND deleted_at IS NULL
 `
 
@@ -268,12 +274,13 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.UpdatedAt,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.EmailVerifiedAt,
 	)
 	return i, err
 }
 
 const getUserByUsername = `-- name: GetUserByUsername :one
-SELECT id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by FROM users 
+SELECT id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by, email_verified_at FROM users 
 WHERE username = $1 AND is_active = true AND deleted_at IS NULL
 `
 
@@ -294,6 +301,7 @@ func (q *Queries) GetUserByUsername(ctx context.Context, username string) (User,
 		&i.UpdatedAt,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.EmailVerifiedAt,
 	)
 	return i, err
 }
@@ -316,7 +324,7 @@ SET display_name = $2,
     avatar_url = $4, 
     updated_at = NOW()
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by
+RETURNING id, username, email, display_name, bio, avatar_url, role, is_active, password_hash, created_at, updated_at, deleted_at, deleted_by, email_verified_at
 `
 
 type UpdateUserParams struct {
@@ -348,6 +356,32 @@ func (q *Queries) UpdateUser(ctx context.Context, arg UpdateUserParams) (User, e
 		&i.UpdatedAt,
 		&i.DeletedAt,
 		&i.DeletedBy,
+		&i.EmailVerifiedAt,
 	)
 	return i, err
+}
+
+const updateUserPassword = `-- name: UpdateUserPassword :exec
+UPDATE users SET password_hash = $2, updated_at = NOW()
+WHERE id = $1
+`
+
+type UpdateUserPasswordParams struct {
+	ID           uuid.UUID `db:"id" json:"id"`
+	PasswordHash string    `db:"password_hash" json:"password_hash"`
+}
+
+func (q *Queries) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error {
+	_, err := q.db.Exec(ctx, updateUserPassword, arg.ID, arg.PasswordHash)
+	return err
+}
+
+const verifyUserEmail = `-- name: VerifyUserEmail :exec
+UPDATE users SET email_verified_at = NOW(), updated_at = NOW()
+WHERE id = $1 AND email_verified_at IS NULL
+`
+
+func (q *Queries) VerifyUserEmail(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.Exec(ctx, verifyUserEmail, id)
+	return err
 }

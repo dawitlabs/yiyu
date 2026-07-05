@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Avatar } from "@/components/avatar";
@@ -13,11 +14,28 @@ import { getMyChannel } from "@/lib/my-channel";
 import type { Playlist } from "@/lib/playlists";
 import type { Video } from "@/lib/videos";
 
-export default async function ChannelPage({
-  params,
-}: {
-  params: Promise<{ handle: string }>;
-}) {
+type PageProps = { params: Promise<{ handle: string }> };
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { handle } = await params;
+  const res = await serverFetch(`/channels/${handle}`);
+  if (!res.ok) return { title: "Channel not found - yiyu" };
+
+  const channel: Channel = await res.json();
+  const description = channel.description || `${channel.name} on yiyu`;
+
+  return {
+    title: `${channel.name} - yiyu`,
+    description,
+    openGraph: {
+      title: channel.name,
+      description,
+      ...(channel.avatar_url ? { images: [{ url: channel.avatar_url }] } : {}),
+    },
+  };
+}
+
+export default async function ChannelPage({ params }: PageProps) {
   const { handle } = await params;
 
   const [

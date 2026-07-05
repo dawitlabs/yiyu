@@ -23,6 +23,7 @@ type Querier interface {
 	AdminGetUserWithDeleted(ctx context.Context, id uuid.UUID) (User, error)
 	AdminListReports(ctx context.Context, arg AdminListReportsParams) ([]AdminListReportsRow, error)
 	AdminListVideos(ctx context.Context, arg AdminListVideosParams) ([]Video, error)
+	AdminResolveReport(ctx context.Context, arg AdminResolveReportParams) (Report, error)
 	AdminUpdateReportStatus(ctx context.Context, arg AdminUpdateReportStatusParams) (Report, error)
 	// Optional useful admin queries:
 	AdminUpdateUserRole(ctx context.Context, arg AdminUpdateUserRoleParams) (User, error)
@@ -39,6 +40,7 @@ type Querier interface {
 	CreateCommunityPostLike(ctx context.Context, arg CreateCommunityPostLikeParams) error
 	CreateEndScreen(ctx context.Context, arg CreateEndScreenParams) (VideoEndScreen, error)
 	CreateNotification(ctx context.Context, arg CreateNotificationParams) (Notification, error)
+	CreatePasswordResetToken(ctx context.Context, arg CreatePasswordResetTokenParams) (PasswordResetToken, error)
 	CreatePlaylist(ctx context.Context, arg CreatePlaylistParams) (Playlist, error)
 	CreateReport(ctx context.Context, arg CreateReportParams) (Report, error)
 	CreateSession(ctx context.Context, arg CreateSessionParams) (Session, error)
@@ -59,6 +61,7 @@ type Querier interface {
 	DeleteSession(ctx context.Context, tokenHash string) error
 	DeleteSubscription(ctx context.Context, arg DeleteSubscriptionParams) error
 	DeleteUser(ctx context.Context, arg DeleteUserParams) (User, error)
+	DeleteUserPasswordResetTokens(ctx context.Context, userID uuid.UUID) error
 	DeleteUserSessions(ctx context.Context, userID uuid.UUID) error
 	DeleteVideoInteraction(ctx context.Context, arg DeleteVideoInteractionParams) error
 	FailVideoProcessing(ctx context.Context, id uuid.UUID) error
@@ -77,6 +80,7 @@ type Querier interface {
 	GetCommunityPostLike(ctx context.Context, arg GetCommunityPostLikeParams) (CommunityPostLike, error)
 	GetEndScreenByID(ctx context.Context, id uuid.UUID) (VideoEndScreen, error)
 	GetLiveStreamByChannelID(ctx context.Context, channelID pgtype.UUID) (LiveStream, error)
+	GetPasswordResetToken(ctx context.Context, tokenHash string) (PasswordResetToken, error)
 	GetPlaylistByID(ctx context.Context, id uuid.UUID) (Playlist, error)
 	GetSessionWithUser(ctx context.Context, tokenHash string) (GetSessionWithUserRow, error)
 	GetSubscription(ctx context.Context, arg GetSubscriptionParams) (Subscription, error)
@@ -139,12 +143,15 @@ type Querier interface {
 	UpdateChannel(ctx context.Context, arg UpdateChannelParams) (Channel, error)
 	UpdateLiveStreamTitle(ctx context.Context, arg UpdateLiveStreamTitleParams) (LiveStream, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
+	UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error
 	UpdateVideo(ctx context.Context, arg UpdateVideoParams) (Video, error)
 	UpdateVideoInteractionType(ctx context.Context, arg UpdateVideoInteractionTypeParams) (VideoInteraction, error)
 	// Issuing a key is also how a channel "resets" their stream — regenerating
 	// forces status back to offline until the new key is actually used to publish.
 	UpsertLiveStreamKey(ctx context.Context, arg UpsertLiveStreamKeyParams) (LiveStream, error)
 	UpsertWatchHistory(ctx context.Context, arg UpsertWatchHistoryParams) (WatchHistory, error)
+	UsePasswordResetToken(ctx context.Context, id uuid.UUID) error
+	VerifyUserEmail(ctx context.Context, id uuid.UUID) error
 }
 
 var _ Querier = (*Queries)(nil)

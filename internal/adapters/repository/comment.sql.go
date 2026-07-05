@@ -164,7 +164,7 @@ func (q *Queries) IncrementCommentLikes(ctx context.Context, id uuid.UUID) (Comm
 }
 
 const listCommentReplies = `-- name: ListCommentReplies :many
-SELECT comments.id, comments.video_id, comments.user_id, comments.parent_id, comments.content, comments.likes_count, comments.is_deleted, comments.created_at, comments.updated_at, users.id, users.username, users.email, users.display_name, users.bio, users.avatar_url, users.role, users.is_active, users.password_hash, users.created_at, users.updated_at, users.deleted_at, users.deleted_by
+SELECT comments.id, comments.video_id, comments.user_id, comments.parent_id, comments.content, comments.likes_count, comments.is_deleted, comments.created_at, comments.updated_at, users.id, users.username, users.email, users.display_name, users.bio, users.avatar_url, users.role, users.is_active, users.password_hash, users.created_at, users.updated_at, users.deleted_at, users.deleted_by, users.email_verified_at
 FROM comments
 JOIN users ON users.id = comments.user_id
 WHERE comments.parent_id = $1 AND comments.is_deleted = false
@@ -215,6 +215,7 @@ func (q *Queries) ListCommentReplies(ctx context.Context, arg ListCommentReplies
 			&i.User.UpdatedAt,
 			&i.User.DeletedAt,
 			&i.User.DeletedBy,
+			&i.User.EmailVerifiedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -227,7 +228,7 @@ func (q *Queries) ListCommentReplies(ctx context.Context, arg ListCommentReplies
 }
 
 const listCommentsByVideo = `-- name: ListCommentsByVideo :many
-SELECT comments.id, comments.video_id, comments.user_id, comments.parent_id, comments.content, comments.likes_count, comments.is_deleted, comments.created_at, comments.updated_at, users.id, users.username, users.email, users.display_name, users.bio, users.avatar_url, users.role, users.is_active, users.password_hash, users.created_at, users.updated_at, users.deleted_at, users.deleted_by
+SELECT comments.id, comments.video_id, comments.user_id, comments.parent_id, comments.content, comments.likes_count, comments.is_deleted, comments.created_at, comments.updated_at, users.id, users.username, users.email, users.display_name, users.bio, users.avatar_url, users.role, users.is_active, users.password_hash, users.created_at, users.updated_at, users.deleted_at, users.deleted_by, users.email_verified_at
 FROM comments
 JOIN users ON users.id = comments.user_id
 WHERE comments.video_id = $1 AND comments.is_deleted = false AND comments.parent_id IS NULL
@@ -280,6 +281,7 @@ func (q *Queries) ListCommentsByVideo(ctx context.Context, arg ListCommentsByVid
 			&i.User.UpdatedAt,
 			&i.User.DeletedAt,
 			&i.User.DeletedBy,
+			&i.User.EmailVerifiedAt,
 		); err != nil {
 			return nil, err
 		}

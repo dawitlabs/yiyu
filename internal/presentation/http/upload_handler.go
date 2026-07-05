@@ -20,11 +20,13 @@ const presignExpiry = 15 * time.Minute
 var safeExt = regexp.MustCompile(`[^a-zA-Z0-9]`)
 
 type UploadHandler struct {
-	storage *storage.Client
+	storage     *storage.Client
+	userLimiter *ipRateLimiter
 }
 
 func NewUploadHandler(storage *storage.Client) *UploadHandler {
-	return &UploadHandler{storage: storage}
+	// ponytail: reusing ipRateLimiter keyed by user ID — 10 uploads/hour, burst 5
+	return &UploadHandler{storage: storage, userLimiter: newIPRateLimiter(10, 5)}
 }
 
 var allowedFolders = map[string]bool{
@@ -35,9 +37,20 @@ var allowedFolders = map[string]bool{
 	"images":     true,
 }
 
+const maxUploadBytes = 2 << 30 // 2 GB
+
+var folderSizeLimit = map[string]int64{
+	"videos":     maxUploadBytes,
+	"avatars":    10 << 20, // 10 MB
+	"banners":    10 << 20,
+	"thumbnails": 10 << 20,
+	"images":     10 << 20,
+}
+
 type presignUploadRequest struct {
 	Filename string `json:"filename"`
 	Folder   string `json:"folder"`
+	Size     int64  `json:"size"`
 }
 
 type presignUploadResponse struct {
@@ -46,6 +59,12 @@ type presignUploadResponse struct {
 }
 
 func (h *UploadHandler) PresignUpload(w http.ResponseWriter, r *http.Request) {
+	user, _ := UserFromContext(r.Context())
+	if !h.userLimiter.allow(user.ID.String()) {
+		http.Error(w, "upload limit exceeded", http.StatusTooManyRequests)
+		return
+	}
+
 	var req presignUploadRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
@@ -61,7 +80,12 @@ func (h *UploadHandler) PresignUpload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, _ := UserFromContext(r.Context())
+	if req.Size > 0 {
+		if limit, ok := folderSizeLimit[folder]; ok && req.Size > limit {
+			http.Error(w, "file too large", http.StatusRequestEntityTooLarge)
+			return
+		}
+	}
 
 	ext := safeExt.ReplaceAllString(filepath.Ext(req.Filename), "")
 	if ext != "" {

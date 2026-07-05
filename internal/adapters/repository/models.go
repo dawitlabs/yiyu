@@ -124,6 +124,15 @@ type Notification struct {
 	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
 }
 
+type PasswordResetToken struct {
+	ID        uuid.UUID          `db:"id" json:"id"`
+	UserID    uuid.UUID          `db:"user_id" json:"user_id"`
+	TokenHash string             `db:"token_hash" json:"token_hash"`
+	ExpiresAt pgtype.Timestamptz `db:"expires_at" json:"expires_at"`
+	UsedAt    pgtype.Timestamptz `db:"used_at" json:"used_at"`
+	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
+}
+
 type Playlist struct {
 	ID          uuid.UUID          `db:"id" json:"id"`
 	ChannelID   pgtype.UUID        `db:"channel_id" json:"channel_id"`
@@ -142,13 +151,15 @@ type PlaylistVideo struct {
 }
 
 type Report struct {
-	ID         uuid.UUID          `db:"id" json:"id"`
-	ReporterID pgtype.UUID        `db:"reporter_id" json:"reporter_id"`
-	VideoID    pgtype.UUID        `db:"video_id" json:"video_id"`
-	CommentID  pgtype.UUID        `db:"comment_id" json:"comment_id"`
-	Reason     string             `db:"reason" json:"reason"`
-	Status     pgtype.Text        `db:"status" json:"status"`
-	CreatedAt  pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	ID          uuid.UUID          `db:"id" json:"id"`
+	ReporterID  pgtype.UUID        `db:"reporter_id" json:"reporter_id"`
+	VideoID     pgtype.UUID        `db:"video_id" json:"video_id"`
+	CommentID   pgtype.UUID        `db:"comment_id" json:"comment_id"`
+	Reason      string             `db:"reason" json:"reason"`
+	Status      pgtype.Text        `db:"status" json:"status"`
+	CreatedAt   pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	ActionTaken pgtype.Text        `db:"action_taken" json:"action_taken"`
+	ResolvedBy  pgtype.UUID        `db:"resolved_by" json:"resolved_by"`
 }
 
 type Session struct {
@@ -166,19 +177,20 @@ type Subscription struct {
 }
 
 type User struct {
-	ID           uuid.UUID          `db:"id" json:"id"`
-	Username     string             `db:"username" json:"username"`
-	Email        string             `db:"email" json:"email"`
-	DisplayName  pgtype.Text        `db:"display_name" json:"display_name"`
-	Bio          pgtype.Text        `db:"bio" json:"bio"`
-	AvatarUrl    pgtype.Text        `db:"avatar_url" json:"avatar_url"`
-	Role         UserRole           `db:"role" json:"role"`
-	IsActive     pgtype.Bool        `db:"is_active" json:"is_active"`
-	PasswordHash string             `db:"password_hash" json:"password_hash"`
-	CreatedAt    pgtype.Timestamptz `db:"created_at" json:"created_at"`
-	UpdatedAt    pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
-	DeletedAt    pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
-	DeletedBy    pgtype.UUID        `db:"deleted_by" json:"deleted_by"`
+	ID              uuid.UUID          `db:"id" json:"id"`
+	Username        string             `db:"username" json:"username"`
+	Email           string             `db:"email" json:"email"`
+	DisplayName     pgtype.Text        `db:"display_name" json:"display_name"`
+	Bio             pgtype.Text        `db:"bio" json:"bio"`
+	AvatarUrl       pgtype.Text        `db:"avatar_url" json:"avatar_url"`
+	Role            UserRole           `db:"role" json:"role"`
+	IsActive        pgtype.Bool        `db:"is_active" json:"is_active"`
+	PasswordHash    string             `db:"password_hash" json:"password_hash"`
+	CreatedAt       pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	UpdatedAt       pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	DeletedAt       pgtype.Timestamptz `db:"deleted_at" json:"deleted_at"`
+	DeletedBy       pgtype.UUID        `db:"deleted_by" json:"deleted_by"`
+	EmailVerifiedAt pgtype.Timestamptz `db:"email_verified_at" json:"email_verified_at"`
 }
 
 type Video struct {

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
 import type { User } from "@/lib/auth";
@@ -18,6 +19,12 @@ export function AppShell({
   children: React.ReactNode;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
   return (
     <>
@@ -25,10 +32,27 @@ export function AppShell({
         user={user}
         channel={channel}
         unreadNotifications={unreadNotifications}
-        onToggleSidebar={() => setExpanded((current) => !current)}
+        onToggleSidebar={() => {
+          if (window.innerWidth < 1024) {
+            setMobileOpen((v) => !v);
+          } else {
+            setExpanded((v) => !v);
+          }
+        }}
       />
       <div className="flex flex-1">
-        <Sidebar expanded={expanded} isLoggedIn={user !== null} />
+        {mobileOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-black/50 lg:hidden"
+            onClick={() => setMobileOpen(false)}
+            onKeyDown={(e) => e.key === "Escape" && setMobileOpen(false)}
+          />
+        )}
+        <Sidebar
+          expanded={expanded}
+          mobileOpen={mobileOpen}
+          isLoggedIn={user !== null}
+        />
         <main className="min-w-0 flex-1">{children}</main>
       </div>
     </>

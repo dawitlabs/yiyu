@@ -6,6 +6,8 @@ import (
 	"log"
 	"log/slog"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -27,7 +29,8 @@ func getEnv(key, fallback string) string {
 func main() {
 	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 
-	ctx := context.Background()
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
 	dsn := os.Getenv("DATABASE_URL")
 	if dsn == "" {
@@ -63,9 +66,14 @@ func main() {
 		go func() {
 			ticker := time.NewTicker(pollInterval)
 			defer ticker.Stop()
-			for range ticker.C {
-				if err := pollLiveStreams(ctx, repo, mediamtxAPIURL); err != nil {
-					slog.Error("poll live streams", "error", err)
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-ticker.C:
+					if err := pollLiveStreams(ctx, repo, mediamtxAPIURL); err != nil {
+						slog.Error("poll live streams", "error", err)
+					}
 				}
 			}
 		}()
@@ -79,7 +87,12 @@ func main() {
 			slog.Error("process next video", "error", err)
 		}
 		if !processed {
-			time.Sleep(pollInterval)
+			select {
+			case <-ctx.Done():
+				log.Println("worker stopped")
+				return
+			case <-time.After(pollInterval):
+			}
 		}
 	}
 }

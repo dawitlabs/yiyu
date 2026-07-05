@@ -245,6 +245,17 @@ export function VideoPlayerShell({
     const onWaiting = () => setIsBuffering(true);
     const onPlaying = () => setIsBuffering(false);
     const onCanPlay = () => setIsBuffering(false);
+    // Chromium resets playbackRate (but not volume) as part of its media
+    // load algorithm whenever .src is (re)assigned — confirmed empirically,
+    // not just spec-reading. That reassignment happens in a parent effect
+    // (VideoPlayer sets src for native-HLS playback, or hls.js does the
+    // equivalent internally) which fires *after* this one, since React
+    // runs child effects before parent effects — so setting playbackRate
+    // once here isn't enough; it has to be reapplied once the load actually
+    // settles too.
+    const onLoadedMetadata = () => {
+      video.playbackRate = loadPlayerPreferences().playbackRate;
+    };
 
     video.addEventListener("play", onPlay);
     video.addEventListener("pause", onPause);
@@ -256,6 +267,7 @@ export function VideoPlayerShell({
     video.addEventListener("waiting", onWaiting);
     video.addEventListener("playing", onPlaying);
     video.addEventListener("canplay", onCanPlay);
+    video.addEventListener("loadedmetadata", onLoadedMetadata);
 
     // Applied once here rather than via useState initializers — those run
     // before the video element exists, too early to set anything on it.
@@ -290,6 +302,7 @@ export function VideoPlayerShell({
       video.removeEventListener("waiting", onWaiting);
       video.removeEventListener("playing", onPlaying);
       video.removeEventListener("canplay", onCanPlay);
+      video.removeEventListener("loadedmetadata", onLoadedMetadata);
     };
   }, [videoRef, hasCaptions]);
 

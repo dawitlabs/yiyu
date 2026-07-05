@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AddToPlaylist } from "@/components/add-to-playlist";
@@ -25,11 +26,37 @@ import { getMyChannel } from "@/lib/my-channel";
 import type { Playlist } from "@/lib/playlists";
 import type { EndScreen, Video } from "@/lib/videos";
 
-export default async function WatchPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+type PageProps = { params: Promise<{ id: string }> };
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { id } = await params;
+  const res = await serverFetch(`/videos/${id}`);
+  if (!res.ok) return { title: "Video not found - yiyu" };
+
+  const video: Video = await res.json();
+  const description = video.description
+    ? video.description.slice(0, 160)
+    : `Watch ${video.title} on yiyu`;
+
+  return {
+    title: `${video.title} - yiyu`,
+    description,
+    openGraph: {
+      title: video.title,
+      description,
+      type: "video.other",
+      ...(video.thumbnail_url ? { images: [{ url: video.thumbnail_url }] } : {}),
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: video.title,
+      description,
+      ...(video.thumbnail_url ? { images: [video.thumbnail_url] } : {}),
+    },
+  };
+}
+
+export default async function WatchPage({ params }: PageProps) {
   const { id } = await params;
 
   const [

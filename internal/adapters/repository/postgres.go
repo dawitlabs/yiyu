@@ -252,6 +252,10 @@ func (r *PostgresRepository) AdminUpdateReportStatus(ctx context.Context, arg Ad
 	return r.queries.AdminUpdateReportStatus(ctx, arg)
 }
 
+func (r *PostgresRepository) AdminResolveReport(ctx context.Context, arg AdminResolveReportParams) (Report, error) {
+	return r.queries.AdminResolveReport(ctx, arg)
+}
+
 func (r *PostgresRepository) UpsertWatchHistory(ctx context.Context, arg UpsertWatchHistoryParams) (WatchHistory, error) {
 	return r.queries.UpsertWatchHistory(ctx, arg)
 }
@@ -414,4 +418,28 @@ func (r *PostgresRepository) GetEndScreenByID(ctx context.Context, id uuid.UUID)
 
 func (r *PostgresRepository) DeleteEndScreen(ctx context.Context, id uuid.UUID) error {
 	return r.queries.DeleteEndScreen(ctx, id)
+}
+
+func (r *PostgresRepository) VerifyUserEmail(ctx context.Context, id uuid.UUID) error {
+	return r.queries.VerifyUserEmail(ctx, id)
+}
+
+func (r *PostgresRepository) UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error {
+	return r.queries.UpdateUserPassword(ctx, arg)
+}
+
+func (r *PostgresRepository) CreatePasswordResetToken(ctx context.Context, arg CreatePasswordResetTokenParams) (PasswordResetToken, error) {
+	return r.queries.CreatePasswordResetToken(ctx, arg)
+}
+
+func (r *PostgresRepository) GetPasswordResetToken(ctx context.Context, tokenHash string) (PasswordResetToken, error) {
+	return r.queries.GetPasswordResetToken(ctx, tokenHash)
+}
+
+func (r *PostgresRepository) UsePasswordResetToken(ctx context.Context, id uuid.UUID) error {
+	return r.queries.UsePasswordResetToken(ctx, id)
+}
+
+func (r *PostgresRepository) DeleteUserPasswordResetTokens(ctx context.Context, userID uuid.UUID) error {
+	return r.queries.DeleteUserPasswordResetTokens(ctx, userID)
 }

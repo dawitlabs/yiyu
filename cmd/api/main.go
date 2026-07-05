@@ -6,12 +6,16 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/dawitlabs/yiyu/internal/adapters/repository"
 	"github.com/dawitlabs/yiyu/internal/application/livechat"
+	"github.com/dawitlabs/yiyu/internal/pkg/email"
 	"github.com/dawitlabs/yiyu/internal/pkg/storage"
 	httpapi "github.com/dawitlabs/yiyu/internal/presentation/http"
 )
@@ -60,8 +64,15 @@ func main() {
 		log.Fatalf("init storage client: %v", err)
 	}
 
+	var emailClient *email.Client
+	if key := os.Getenv("RESEND_API_KEY"); key != "" {
+		emailClient = email.New(key, getEnv("EMAIL_FROM", "yiyu <noreply@yiyu.app>"))
+	}
+	tokenSecret := []byte(getEnv("TOKEN_SECRET", "dev-secret-change-me"))
+	frontendURL := getEnv("FRONTEND_URL", "http://localhost:3000")
+
 	repo := repository.NewPostgresRepository(pool)
-	auth := httpapi.NewAuthHandler(repo)
+	auth := httpapi.NewAuthHandler(repo, emailClient, tokenSecret, frontendURL)
 	admin := httpapi.NewAdminHandler(repo)
 	channel := httpapi.NewChannelHandler(repo)
 	video := httpapi.NewVideoHandler(repo)
@@ -106,6 +117,10 @@ func main() {
 	mux.Handle("POST /login", authRateLimit(http.HandlerFunc(auth.Login)))
 	mux.HandleFunc("POST /logout", auth.Logout)
 	mux.Handle("GET /me", requireAuth(http.HandlerFunc(auth.Me)))
+	mux.Handle("POST /verify-email", authRateLimit(http.HandlerFunc(auth.VerifyEmail)))
+	mux.Handle("POST /resend-verification", requireAuth(http.HandlerFunc(auth.ResendVerification)))
+	mux.Handle("POST /forgot-password", authRateLimit(http.HandlerFunc(auth.ForgotPassword)))
+	mux.Handle("POST /reset-password", authRateLimit(http.HandlerFunc(auth.ResetPassword)))
 
 	mux.Handle("GET /admin/users", requireAdmin(http.HandlerFunc(admin.ListUsers)))
 	mux.Handle("DELETE /admin/users/{id}", requireAdmin(http.HandlerFunc(admin.DeleteUser)))
@@ -114,6 +129,7 @@ func main() {
 	mux.Handle("DELETE /admin/videos/{id}", requireAdmin(http.HandlerFunc(admin.DeleteVideo)))
 	mux.Handle("GET /admin/reports", requireAdmin(http.HandlerFunc(admin.ListReports)))
 	mux.Handle("PATCH /admin/reports/{id}", requireAdmin(http.HandlerFunc(admin.UpdateReportStatus)))
+	mux.Handle("POST /admin/reports/{id}/resolve", requireAdmin(http.HandlerFunc(admin.ResolveReport)))
 
 	mux.Handle("POST /channels", requireAuth(http.HandlerFunc(channel.CreateChannel)))
 	mux.HandleFunc("GET /channels", channel.ListChannels)
@@ -217,6 +233,25 @@ func main() {
 		generalHandler.ServeHTTP(w, r)
 	})
 
-	log.Println("listening on :8082")
-	log.Fatal(http.ListenAndServe(":8082", handler))
+	port := getEnv("PORT", "8082")
+	srv := &http.Server{Addr: ":" + port, Handler: handler}
+
+	go func() {
+		log.Printf("listening on :%s", port)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("server error: %v", err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	log.Println("shutting down")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	if err := srv.Shutdown(ctx); err != nil {
+		log.Fatalf("forced shutdown: %v", err)
+	}
+	log.Println("server stopped")
 }

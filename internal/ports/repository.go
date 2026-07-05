@@ -25,6 +25,7 @@ type Repository interface {
 	CommunityPostRepository
 	LiveStreamRepository
 	EndScreenRepository
+	PasswordResetRepository
 
 	// WithTx runs fn inside a single transaction, giving it access to every
 	// query method (repository.Querier is the full sqlc-generated set) —
@@ -42,6 +43,8 @@ type UserRepository interface {
 	AdminDeleteUser(ctx context.Context, arg repository.AdminDeleteUserParams) error
 	AdminGetAllUsers(ctx context.Context, arg repository.AdminGetAllUsersParams) ([]repository.User, error)
 	AdminUpdateUserRole(ctx context.Context, arg repository.AdminUpdateUserRoleParams) (repository.User, error)
+	VerifyUserEmail(ctx context.Context, id uuid.UUID) error
+	UpdateUserPassword(ctx context.Context, arg repository.UpdateUserPasswordParams) error
 }
 
 type SessionRepository interface {
@@ -107,6 +110,7 @@ type ReportRepository interface {
 	CreateReport(ctx context.Context, arg repository.CreateReportParams) (repository.Report, error)
 	AdminListReports(ctx context.Context, arg repository.AdminListReportsParams) ([]repository.AdminListReportsRow, error)
 	AdminUpdateReportStatus(ctx context.Context, arg repository.AdminUpdateReportStatusParams) (repository.Report, error)
+	AdminResolveReport(ctx context.Context, arg repository.AdminResolveReportParams) (repository.Report, error)
 }
 
 type WatchHistoryRepository interface {
@@ -173,6 +177,13 @@ type EndScreenRepository interface {
 	ListEndScreensByVideo(ctx context.Context, videoID uuid.UUID) ([]repository.VideoEndScreen, error)
 	GetEndScreenByID(ctx context.Context, id uuid.UUID) (repository.VideoEndScreen, error)
 	DeleteEndScreen(ctx context.Context, id uuid.UUID) error
+}
+
+type PasswordResetRepository interface {
+	CreatePasswordResetToken(ctx context.Context, arg repository.CreatePasswordResetTokenParams) (repository.PasswordResetToken, error)
+	GetPasswordResetToken(ctx context.Context, tokenHash string) (repository.PasswordResetToken, error)
+	UsePasswordResetToken(ctx context.Context, id uuid.UUID) error
+	DeleteUserPasswordResetTokens(ctx context.Context, userID uuid.UUID) error
 }
 
 // Compile-time guard: PostgresRepository must satisfy Repository in full.

@@ -6,6 +6,9 @@ import { type SubmitEvent, useRef, useState } from "react";
 type Stage = "idle" | "uploading" | "publishing";
 type ThumbState = "idle" | "uploading";
 
+const MAX_VIDEO_SIZE = 2 * 1024 * 1024 * 1024; // 2 GB
+const MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10 MB
+
 export function CreateVideoForm() {
   const router = useRouter();
   const [title, setTitle] = useState("");
@@ -20,6 +23,10 @@ export function CreateVideoForm() {
   async function handleThumbnailPick(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > MAX_IMAGE_SIZE) {
+      setError("Thumbnail must be under 10 MB.");
+      return;
+    }
     setThumbState("uploading");
 
     const res = await fetch("/api/uploads/presign", {
@@ -58,13 +65,17 @@ export function CreateVideoForm() {
       setError("Choose a video file.");
       return;
     }
+    if (videoFile.size > MAX_VIDEO_SIZE) {
+      setError("Video must be under 2 GB.");
+      return;
+    }
 
     setStage("uploading");
 
     const presignRes = await fetch("/api/uploads/presign", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ filename: videoFile.name }),
+      body: JSON.stringify({ filename: videoFile.name, size: videoFile.size }),
     });
     if (!presignRes.ok) {
       setStage("idle");

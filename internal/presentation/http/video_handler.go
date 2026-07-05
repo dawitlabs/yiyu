@@ -32,6 +32,15 @@ type reportRequest struct {
 	Reason string `json:"reason"`
 }
 
+var validReportReasons = map[string]bool{
+	"spam":             true,
+	"harassment":       true,
+	"copyright":        true,
+	"harmful_content":  true,
+	"misinformation":   true,
+	"other":            true,
+}
+
 type VideoHandler struct {
 	repo videoRepository
 }
@@ -638,8 +647,8 @@ func (h *VideoHandler) ReportVideo(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "invalid request body", http.StatusBadRequest)
 		return
 	}
-	if req.Reason == "" {
-		http.Error(w, "reason is required", http.StatusBadRequest)
+	if !validReportReasons[req.Reason] {
+		http.Error(w, "reason must be one of: spam, harassment, copyright, harmful_content, misinformation, other", http.StatusBadRequest)
 		return
 	}
 

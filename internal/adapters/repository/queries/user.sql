@@ -62,3 +62,11 @@ RETURNING *;
 
 -- name: AdminGetUserWithDeleted :one
 SELECT * FROM users WHERE id = $1;
+
+-- name: VerifyUserEmail :exec
+UPDATE users SET email_verified_at = NOW(), updated_at = NOW()
+WHERE id = $1 AND email_verified_at IS NULL;
+
+-- name: UpdateUserPassword :exec
+UPDATE users SET password_hash = $2, updated_at = NOW()
+WHERE id = $1;

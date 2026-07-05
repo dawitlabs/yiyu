@@ -13,8 +13,15 @@ const roboto = Roboto({
 });
 
 export const metadata: Metadata = {
-  title: "yiyu",
-  description: "A video platform.",
+  title: { default: "yiyu", template: "%s" },
+  description: "A video platform for African creators.",
+  openGraph: {
+    siteName: "yiyu",
+    type: "website",
+  },
+  twitter: {
+    card: "summary",
+  },
 };
 
 export default async function RootLayout({

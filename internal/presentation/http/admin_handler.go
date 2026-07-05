@@ -267,3 +267,52 @@ func (h *AdminHandler) UpdateReportStatus(w http.ResponseWriter, r *http.Request
 
 	writeJSON(w, http.StatusOK, reportStatusResponse{ID: report.ID.String(), Status: report.Status.String})
 }
+
+var validReportActions = map[string]bool{
+	"warn_user":    true,
+	"remove_video": true,
+	"ban_user":     true,
+	"no_action":    true,
+}
+
+func (h *AdminHandler) ResolveReport(w http.ResponseWriter, r *http.Request) {
+	id, err := uuid.Parse(r.PathValue("id"))
+	if err != nil {
+		http.Error(w, "invalid report id", http.StatusBadRequest)
+		return
+	}
+
+	var req struct {
+		Status string `json:"status"`
+		Action string `json:"action"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	if req.Status != "reviewed" && req.Status != "dismissed" {
+		http.Error(w, "status must be reviewed or dismissed", http.StatusBadRequest)
+		return
+	}
+	if req.Action != "" && !validReportActions[req.Action] {
+		http.Error(w, "action must be one of: warn_user, remove_video, ban_user, no_action", http.StatusBadRequest)
+		return
+	}
+
+	admin, _ := UserFromContext(r.Context())
+
+	report, err := h.repo.AdminResolveReport(r.Context(), repository.AdminResolveReportParams{
+		ID:          id,
+		Status:      pgtype.Text{String: req.Status, Valid: true},
+		ActionTaken: pgtype.Text{String: req.Action, Valid: req.Action != ""},
+		ResolvedBy:  pgtype.UUID{Bytes: admin.ID, Valid: true},
+	})
+	if err != nil {
+		slog.Error("admin: resolve report", "error", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, reportStatusResponse{ID: report.ID.String(), Status: report.Status.String})
+}

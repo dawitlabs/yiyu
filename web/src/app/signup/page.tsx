@@ -14,6 +14,17 @@ export default async function SignupPage() {
         Create an account
       </h1>
       <SignupForm />
+      <p className="text-xs text-neutral-500">
+        By signing up, you agree to our{" "}
+        <a href="/terms" className="underline">
+          Terms of Service
+        </a>{" "}
+        and{" "}
+        <a href="/privacy" className="underline">
+          Privacy Policy
+        </a>
+        .
+      </p>
     </div>
   );
 }
