@@ -45,7 +45,8 @@ export function SearchBox() {
 
   return (
     <div ref={containerRef} className="relative mx-4 max-w-md flex-1">
-      <form action="/search" method="get" className="flex items-center">
+      <form action="/search" method="get" className="relative flex items-center">
+        <SearchIcon className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground" />
         <input
           type="search"
           name="q"
@@ -55,19 +56,12 @@ export function SearchBox() {
           placeholder="Search"
           aria-label="Search videos"
           autoComplete="off"
-          className="w-full rounded-l-full border border-black/15 border-r-0 px-4 py-1.5 text-sm dark:border-white/15 dark:bg-transparent"
+          className="w-full rounded border border-white/20 bg-black/40 py-1.5 pr-3 pl-9 text-sm transition-colors duration-200 placeholder:text-muted-foreground focus:border-white focus:bg-black/70 focus:outline-none"
         />
-        <button
-          type="submit"
-          aria-label="Search"
-          className="rounded-r-full border border-black/15 border-l-0 bg-black/5 px-4 py-[9px] dark:border-white/15 dark:bg-white/10"
-        >
-          <SearchIcon className="h-4 w-4" />
-        </button>
       </form>
 
       {isOpen && suggestions.length > 0 && (
-        <div className="absolute z-50 mt-1 w-full rounded-lg border border-black/10 bg-white py-1 shadow-lg dark:border-white/10 dark:bg-neutral-900">
+        <div className="glass absolute z-50 mt-2 w-full animate-scale-in rounded-lg py-1 shadow-modal">
           {suggestions.map((title) => (
             <button
               key={title}

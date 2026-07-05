@@ -42,7 +42,7 @@ export function AccountMenu({
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 z-50 mt-2 w-56 rounded-lg border border-black/10 bg-white py-1 text-sm shadow-lg dark:border-white/10 dark:bg-neutral-900">
+        <div className="glass absolute right-0 z-50 mt-2 w-56 animate-scale-in rounded-lg py-1 text-sm shadow-modal">
           <p className="truncate px-4 py-2 text-black/60 dark:text-white/60">
             {user.username}
           </p>

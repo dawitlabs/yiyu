@@ -49,7 +49,7 @@ export function SignupForm() {
           required
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          className="rounded-md border border-black/15 px-3 py-2 dark:border-white/15 dark:bg-transparent"
+          className="rounded border border-transparent bg-input px-4 py-2.5 transition-colors duration-200 focus:border-white focus:outline-none"
         />
       </div>
 
@@ -64,7 +64,7 @@ export function SignupForm() {
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="rounded-md border border-black/15 px-3 py-2 dark:border-white/15 dark:bg-transparent"
+          className="rounded border border-transparent bg-input px-4 py-2.5 transition-colors duration-200 focus:border-white focus:outline-none"
         />
       </div>
 
@@ -80,7 +80,7 @@ export function SignupForm() {
           minLength={8}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="rounded-md border border-black/15 px-3 py-2 dark:border-white/15 dark:bg-transparent"
+          className="rounded border border-transparent bg-input px-4 py-2.5 transition-colors duration-200 focus:border-white focus:outline-none"
         />
       </div>
 
@@ -93,7 +93,7 @@ export function SignupForm() {
       <button
         type="submit"
         disabled={isSubmitting}
-        className="mt-2 rounded-md bg-black py-2 text-white disabled:opacity-50 dark:bg-white dark:text-black"
+        className="mt-2 rounded bg-accent py-2.5 font-semibold text-white transition-colors duration-200 hover:bg-accent-muted disabled:opacity-50"
       >
         {isSubmitting ? "Creating account…" : "Sign up"}
       </button>

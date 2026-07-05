@@ -223,7 +223,7 @@ export default async function WatchPage({ params }: PageProps) {
                   </>
                 }
               >
-                <div className="rounded-lg border border-black/10 bg-white p-3 shadow-lg dark:border-white/10 dark:bg-neutral-900">
+                <div className="glass rounded-lg p-3 shadow-modal">
                   <AddToPlaylist videoId={video.id} playlists={myPlaylists} />
                 </div>
               </PopoverButton>
@@ -235,7 +235,7 @@ export default async function WatchPage({ params }: PageProps) {
                 buttonClassName="rounded-full border border-black/15 p-2 dark:border-white/15"
                 buttonContent={<MoreIcon className="h-4 w-4" />}
               >
-                <div className="rounded-lg border border-black/10 bg-white p-1 shadow-lg dark:border-white/10 dark:bg-neutral-900">
+                <div className="glass rounded-lg p-1 shadow-modal">
                   <ReportButton
                     targetType="videos"
                     targetId={video.id}
