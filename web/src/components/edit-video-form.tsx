@@ -33,8 +33,10 @@ export function EditVideoForm({ video }: { video: Video }) {
       setError("Thumbnail upload failed.");
       return;
     }
-    const { upload_url, public_url }: { upload_url: string; public_url: string } =
-      await res.json();
+    const {
+      upload_url,
+      public_url,
+    }: { upload_url: string; public_url: string } = await res.json();
 
     const put = await fetch(upload_url, {
       method: "PUT",

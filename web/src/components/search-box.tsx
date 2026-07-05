@@ -45,7 +45,11 @@ export function SearchBox() {
 
   return (
     <div ref={containerRef} className="relative mx-4 max-w-md flex-1">
-      <form action="/search" method="get" className="relative flex items-center">
+      <form
+        action="/search"
+        method="get"
+        className="relative flex items-center"
+      >
         <SearchIcon className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground" />
         <input
           type="search"

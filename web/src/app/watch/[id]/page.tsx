@@ -28,7 +28,9 @@ import type { EndScreen, Video } from "@/lib/videos";
 
 type PageProps = { params: Promise<{ id: string }> };
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
   const { id } = await params;
   const res = await serverFetch(`/videos/${id}`);
   if (!res.ok) return { title: "Video not found - yiyu" };
@@ -45,7 +47,9 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       title: video.title,
       description,
       type: "video.other",
-      ...(video.thumbnail_url ? { images: [{ url: video.thumbnail_url }] } : {}),
+      ...(video.thumbnail_url
+        ? { images: [{ url: video.thumbnail_url }] }
+        : {}),
     },
     twitter: {
       card: "summary_large_image",
@@ -87,7 +91,9 @@ export default async function WatchPage({ params }: PageProps) {
   const relatedVideos: Video[] = relatedRes.ok ? await relatedRes.json() : [];
   const captions: Caption[] = captionsRes.ok ? await captionsRes.json() : [];
   const chapters: Chapter[] = chaptersRes.ok ? await chaptersRes.json() : [];
-  const endScreens: EndScreen[] = endScreensRes.ok ? await endScreensRes.json() : [];
+  const endScreens: EndScreen[] = endScreensRes.ok
+    ? await endScreensRes.json()
+    : [];
   const isOwner = myChannel?.id === video.channel_id;
 
   const channelRes = await serverFetch(`/channels/${video.channel_handle}`);

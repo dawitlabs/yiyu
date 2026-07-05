@@ -8,12 +8,12 @@ import { EndScreenOverlay } from "@/components/end-screen-overlay";
 import { VideoPlayerShell } from "@/components/video-controls";
 import type { Caption } from "@/lib/captions";
 import type { Chapter } from "@/lib/chapters";
-import type { EndScreen } from "@/lib/videos";
 import { formatTimestamp } from "@/lib/format";
 import {
   loadPlayerPreferences,
   savePlayerPreferences,
 } from "@/lib/player-preferences";
+import type { EndScreen } from "@/lib/videos";
 
 const AUTOPLAY_COUNTDOWN_SECONDS = 5;
 

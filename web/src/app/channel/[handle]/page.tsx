@@ -16,7 +16,9 @@ import type { Video } from "@/lib/videos";
 
 type PageProps = { params: Promise<{ handle: string }> };
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
   const { handle } = await params;
   const res = await serverFetch(`/channels/${handle}`);
   if (!res.ok) return { title: "Channel not found - yiyu" };

@@ -52,7 +52,8 @@ export default function PrivacyPage() {
       </p>
       <ul>
         <li>
-          Service providers who help operate the Platform (hosting,email, storage)
+          Service providers who help operate the Platform (hosting,email,
+          storage)
         </li>
         <li>Law enforcement when required by law</li>
       </ul>
@@ -82,8 +83,9 @@ export default function PrivacyPage() {
 
       <h2>7. Cookies</h2>
       <p>
-        We use a single essential cookie for authentication (session management).
-        We do not use tracking cookies or third-party advertising cookies.
+        We use a single essential cookie for authentication (session
+        management). We do not use tracking cookies or third-party advertising
+        cookies.
       </p>
 
       <h2>8. Children</h2>

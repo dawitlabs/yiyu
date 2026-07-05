@@ -21,6 +21,7 @@ export function AppShell({
   const [drawerOpen, setDrawerOpen] = useState(false);
   const pathname = usePathname();
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: pathname is the trigger — close the drawer on every route change
   useEffect(() => {
     setDrawerOpen(false);
   }, [pathname]);
@@ -34,8 +35,10 @@ export function AppShell({
         onToggleSidebar={() => setDrawerOpen((v) => !v)}
       />
       {drawerOpen && (
-        <div
-          className="fixed inset-0 z-40 animate-fade-in bg-black/60"
+        <button
+          type="button"
+          aria-label="Close menu"
+          className="fixed inset-0 z-40 animate-fade-in cursor-default bg-black/60"
           onClick={() => setDrawerOpen(false)}
           onKeyDown={(e) => e.key === "Escape" && setDrawerOpen(false)}
         />

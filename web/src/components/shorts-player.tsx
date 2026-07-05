@@ -32,10 +32,7 @@ export function ShortsPlayer({ shorts }: { shorts: Video[] }) {
   );
 }
 
-function ShortCard({
-  short,
-  isActive,
-}: { short: Video; isActive: boolean }) {
+function ShortCard({ short, isActive }: { short: Video; isActive: boolean }) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const hlsRef = useRef<Hls | null>(null);
 

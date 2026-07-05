@@ -12,9 +12,7 @@ export default async function SignupPage() {
   return (
     <div className="mx-auto w-full max-w-md px-4 py-16">
       <div className="flex animate-fade-up flex-col gap-6 rounded-md bg-black/60 p-8 shadow-modal sm:p-10">
-        <h1 className="font-bold text-3xl tracking-tight">
-          Create an account
-        </h1>
+        <h1 className="font-bold text-3xl tracking-tight">Create an account</h1>
         <SignupForm />
         <p className="text-muted-foreground text-sm">
           Already on yiyu?{" "}
