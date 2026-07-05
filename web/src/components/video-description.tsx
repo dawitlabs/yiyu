@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { formatRelativeTime } from "@/lib/format";
+import { formatRelativeTime, formatViews } from "@/lib/format";
 
 export function VideoDescription({
   viewsCount,
@@ -17,7 +17,7 @@ export function VideoDescription({
   return (
     <div className="mt-3 rounded-xl bg-black/[0.03] p-3 dark:bg-white/[0.06]">
       <p className="text-sm font-medium">
-        {viewsCount} views · {formatRelativeTime(uploadedAt)}
+        {formatViews(viewsCount)} · {formatRelativeTime(uploadedAt)}
       </p>
       {description && (
         <>

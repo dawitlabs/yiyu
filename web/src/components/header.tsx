@@ -45,7 +45,7 @@ export function Header({
           : "bg-gradient-to-b from-black/70 to-transparent"
       }`}
     >
-      <nav className="flex h-16 items-center gap-4 px-4 sm:px-6">
+      <nav className="flex h-16 items-center gap-2 px-3 sm:gap-4 sm:px-6">
         <button
           type="button"
           onClick={onToggleSidebar}
@@ -56,7 +56,7 @@ export function Header({
         </button>
         <Link
           href="/"
-          className="font-bold text-2xl text-accent tracking-tight transition-transform duration-300 hover:scale-105"
+          className="shrink-0 font-bold text-2xl text-accent tracking-tight transition-transform duration-300 hover:scale-105"
         >
           yiyu
         </Link>

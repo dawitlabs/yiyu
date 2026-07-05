@@ -44,7 +44,10 @@ export function SearchBox() {
   }
 
   return (
-    <div ref={containerRef} className="relative mx-4 max-w-md flex-1">
+    <div
+      ref={containerRef}
+      className="relative mx-1 min-w-0 max-w-md flex-1 sm:mx-4"
+    >
       <form
         action="/search"
         method="get"
@@ -60,7 +63,7 @@ export function SearchBox() {
           placeholder="Search"
           aria-label="Search videos"
           autoComplete="off"
-          className="w-full rounded border border-white/20 bg-black/40 py-1.5 pr-3 pl-9 text-sm transition-colors duration-200 placeholder:text-muted-foreground focus:border-white focus:bg-black/70 focus:outline-none"
+          className="w-full min-w-0 rounded border border-white/20 bg-black/40 py-1.5 pr-3 pl-9 text-sm transition-colors duration-200 placeholder:text-muted-foreground focus:border-white focus:bg-black/70 focus:outline-none"
         />
       </form>
 

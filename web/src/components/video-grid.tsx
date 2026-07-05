@@ -39,7 +39,7 @@ export function VideoRow({
       <h2 className="mb-3 px-4 font-semibold text-xl tracking-tight sm:px-6">
         {title}
       </h2>
-      <div className="hide-scrollbar -my-3 flex snap-x gap-2 overflow-x-auto px-4 py-3 sm:px-6">
+      <div className="hide-scrollbar -my-3 flex snap-x gap-2 overflow-x-auto scroll-pl-4 px-4 py-3 sm:scroll-pl-6 sm:px-6">
         {videos.map((video, i) => (
           <div
             key={video.id}
